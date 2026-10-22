@@ -31,36 +31,36 @@ export default function BotanicalPaymentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStep, setSubmitStep] = useState('');
 
-  // Shipping & Contact State
+  // Shipping & Contact State (Clean empty initial values)
   const [shippingForm, setShippingForm] = useState({
-    fullName: 'Astrid Lind',
-    email: 'astrid.nordic@tundra.se',
-    phone: '03001234567',
-    address: 'Gulberg III, Street 7, Block B',
-    city: 'Lahore',
-    postalCode: '54000',
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
     deliveryNotes: '',
   });
 
-  // Payment Specific State
+  // Payment Specific State (Clean empty initial values)
   const [paymentForm, setPaymentForm] = useState({
     // JazzCash
-    jazzMobile: '03011234567',
-    jazzCnic: '123456',
+    jazzMobile: '',
+    jazzCnic: '',
 
     // EasyPaisa
-    easypaisaMobile: '03451234567',
-    easypaisaName: 'Astrid Lind',
+    easypaisaMobile: '',
+    easypaisaName: '',
 
     // NayaPay / SadaPay
     digitalProvider: 'nayapay', // 'nayapay' | 'sadapay'
-    digitalTagOrMobile: '@astrid_nordic',
+    digitalTagOrMobile: '',
 
     // Card
-    cardNumber: '4242 4242 4242 4242',
-    cardName: 'ASTRID LIND',
-    cardExpiry: '12/28',
-    cardCvv: '888',
+    cardNumber: '',
+    cardName: '',
+    cardExpiry: '',
+    cardCvv: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -811,11 +811,10 @@ export default function BotanicalPaymentModal({
                       <button
                         type="button"
                         onClick={() =>
-                          setPaymentForm({
-                            ...paymentForm,
+                          setPaymentForm((prev) => ({
+                            ...prev,
                             digitalProvider: 'nayapay',
-                            digitalTagOrMobile: '@astrid_nordic',
-                          })
+                          }))
                         }
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                           paymentForm.digitalProvider === 'nayapay'
@@ -828,11 +827,10 @@ export default function BotanicalPaymentModal({
                       <button
                         type="button"
                         onClick={() =>
-                          setPaymentForm({
-                            ...paymentForm,
+                          setPaymentForm((prev) => ({
+                            ...prev,
                             digitalProvider: 'sadapay',
-                            digitalTagOrMobile: '@astrid_sada',
-                          })
+                          }))
                         }
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                           paymentForm.digitalProvider === 'sadapay'
