@@ -2,27 +2,15 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import { STORE_CONFIG } from '../config/storeConfig';
 
 const BotanicalCartContext = createContext(null);
-const CART_STORAGE_KEY = 'nordic_botanical_bag_v1';
+const CART_STORAGE_KEY = 'nordic_botanical_bag_v2';
 
 export function BotanicalCartProvider({ children, onTriggerToast }) {
   const [cartItems, setCartItems] = useState(() => {
     try {
+      // Clear legacy preloaded item from v1 if present
+      localStorage.removeItem('nordic_botanical_bag_v1');
       const saved = localStorage.getItem(CART_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [
-        // Pre-load with one iconic item so bag feels alive immediately
-        {
-          id: 'nordic-2',
-          title: 'Wild Cloudberry Rescue & Barrier Balm',
-          botanicalName: 'Rubus chamaemorus & Picea abies',
-          price: 44.0,
-          compareAtPrice: 52.0,
-          image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop&q=80',
-          size: '60 g / 2.1 oz',
-          quantity: 1,
-          stock: 22,
-          category: 'balms',
-        }
-      ];
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
     }

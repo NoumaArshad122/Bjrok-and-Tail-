@@ -39,11 +39,11 @@ export default function BotanicalProductCard({ product }) {
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-      className="group relative bg-[#FBF9F5] rounded-3xl p-3.5 border border-[#EBE6DC] shadow-sm hover:shadow-xl hover:shadow-[#1A3326]/5 transition-all flex flex-col justify-between"
+      className="group relative bg-[#FBF9F5] rounded-3xl p-3 sm:p-3.5 border border-[#EBE6DC] shadow-sm hover:shadow-xl hover:shadow-[#1A3326]/5 transition-all flex flex-col justify-between overflow-hidden"
     >
       <div>
         {/* Product Art Frame */}
-        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#EFF4EE] mb-3">
+        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#EFF4EE] mb-2.5 sm:mb-3">
           <Link to={`/product/${product.slug}`} className="block w-full h-full">
             <motion.img
               src={product.images[0]}
@@ -94,7 +94,7 @@ export default function BotanicalProductCard({ product }) {
             {product.categoryName} • {product.size}
           </span>
 
-          <h3 className="font-botanical text-base font-bold text-[#1A3326] group-hover:text-[#C26747] transition-colors leading-snug line-clamp-1">
+          <h3 className="font-botanical text-sm sm:text-base font-bold text-[#1A3326] group-hover:text-[#C26747] transition-colors leading-snug line-clamp-1">
             <Link to={`/product/${product.slug}`}>{product.title}</Link>
           </h3>
 
@@ -105,13 +105,13 @@ export default function BotanicalProductCard({ product }) {
       </div>
 
       {/* Footer Price & Add Button */}
-      <div className="mt-3 pt-3 border-t border-[#EBE6DC]/80 flex items-center justify-between">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold text-[#1A3326]">
+      <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#EBE6DC]/80 flex items-center justify-between gap-1.5 min-w-0">
+        <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-1.5 min-w-0">
+          <span className="text-xs sm:text-sm font-bold text-[#1A3326] leading-tight whitespace-nowrap">
             {formatCurrency(product.price)}
           </span>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
-            <span className="text-[11px] text-slate-400 line-through">
+            <span className="text-[10px] sm:text-[11px] text-slate-400 line-through leading-none whitespace-nowrap">
               {formatCurrency(product.compareAtPrice)}
             </span>
           )}
@@ -120,10 +120,10 @@ export default function BotanicalProductCard({ product }) {
         {/* Quick Add Button with Tap Scale Animation */}
         <motion.button
           type="button"
-          whileTap={{ scale: 0.88 }}
+          whileTap={{ scale: 0.9 }}
           onClick={handleQuickAdd}
           aria-label={`Add ${product.title} to bag`}
-          className={`h-8 px-3 rounded-full flex items-center justify-center gap-1 text-xs font-semibold shadow-sm transition-all cursor-pointer ${
+          className={`h-7 sm:h-8 px-2 sm:px-3 rounded-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold shadow-sm transition-all cursor-pointer shrink-0 ${
             justAdded
               ? 'bg-[#1A3326] text-[#FBF9F5] hover:bg-[#C26747]'
               : 'bg-[#C26747] hover:bg-[#1A3326] text-white'
@@ -131,13 +131,13 @@ export default function BotanicalProductCard({ product }) {
         >
           {justAdded ? (
             <>
-              <Check className="w-3.5 h-3.5" />
-              <span className="text-[11px]">In Bag</span>
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span className="text-[10px] sm:text-[11px] whitespace-nowrap">In Bag</span>
             </>
           ) : (
             <>
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="text-[11px]">Add</span>
+              <span className="text-[10px] sm:text-[11px] whitespace-nowrap">Add</span>
             </>
           )}
         </motion.button>
