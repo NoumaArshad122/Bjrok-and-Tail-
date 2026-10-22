@@ -14,10 +14,13 @@ import {
   CheckCircle2,
   Lock,
   ChevronRight,
+  Printer,
+  Receipt,
 } from 'lucide-react';
 import { useBotanicalCart } from '../context/BotanicalCartContext';
 import { formatCurrency } from '../../src/lib/formatCurrency';
 import { STORE_CONFIG } from '../config/storeConfig';
+import BotanicalPaymentModal from '../components/checkout/BotanicalPaymentModal';
 import confetti from 'canvas-confetti';
 
 export default function BotanicalBagPage() {
@@ -40,93 +43,193 @@ export default function BotanicalBagPage() {
 
   const navigate = useNavigate();
 
-  // Checkout Prototype State
+  // Checkout & Payment State
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
-  const [orderId, setOrderId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState(null);
 
-  const [checkoutForm, setCheckoutForm] = useState({
-    name: 'Astrid Lind',
-    email: 'astrid.nordic@tundra.se',
-    address: 'Kungsgatan 14, Apt 3B',
-    city: 'Stockholm',
-    postalCode: '111 43',
-    country: 'Sweden',
-  });
+  const handleOrderSuccess = (orderData) => {
+    setCompletedOrder(orderData);
+    setOrderComplete(true);
+    setIsCheckingOut(false);
+    clearBag();
 
-  const handlePlaceOrder = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    setTimeout(() => {
-      const generatedId = 'BOT-' + Math.floor(100000 + Math.random() * 900000);
-      setOrderId(generatedId);
-      setIsSubmitting(false);
-      setOrderComplete(true);
-      setIsCheckingOut(false);
-
-      try {
-        confetti({
-          particleCount: 90,
-          spread: 65,
-          origin: { y: 0.6 },
-          colors: ['#1A3326', '#C26747', '#7D9678', '#FBF9F5'],
-        });
-      } catch (err) {}
-
-      clearBag();
-    }, 1100);
+    try {
+      confetti({
+        particleCount: 120,
+        spread: 75,
+        origin: { y: 0.6 },
+        colors: ['#1A3326', '#C26747', '#7D9678', '#FBF9F5', '#00A859', '#D32F2F', '#00838F'],
+      });
+    } catch (err) {}
   };
 
   // Order Complete View
-  if (orderComplete) {
+  if (orderComplete && completedOrder) {
+    const isCod = completedOrder.method === 'cod';
+
     return (
-      <div className="pb-28 lg:pb-16 max-w-xl mx-auto px-4 py-12 animate-in fade-in duration-300">
-        <div className="bg-[#FBF9F5] p-8 sm:p-10 rounded-3xl border border-[#EBE6DC] shadow-2xl text-center space-y-6">
-          <div className="w-18 h-18 rounded-full bg-[#1A3326] text-white flex items-center justify-center mx-auto shadow-md">
-            <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
+      <div className="pb-28 lg:pb-16 max-w-2xl mx-auto px-4 py-10 animate-in fade-in duration-300">
+        <div className="bg-[#FBF9F5] p-6 sm:p-10 rounded-[2.5rem] border border-[#EBE6DC] shadow-2xl text-center space-y-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#1A3326] text-[#FBF9F5] flex items-center justify-center mx-auto shadow-lg shadow-[#1A3326]/20 ring-8 ring-[#1A3326]/10">
+            <CheckCircle2 className="w-9 h-9 sm:w-11 sm:h-11 stroke-[2.2]" />
           </div>
 
           <div className="space-y-1.5">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#7D9678]">
-              Nordic Wildcraft Order Confirmed
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[#7D9678]">
+              {isCod ? 'Cash on Delivery Booking Confirmed' : 'Payment Verified & Dispatched'}
             </span>
-            <h1 className="font-botanical text-3xl sm:text-4xl font-bold text-[#1A3326]">
-              Tack Så Mycket, {checkoutForm.name}
+            <h1 className="font-botanical text-2xl sm:text-4xl font-bold text-[#1A3326]">
+              Tack Så Mycket, {completedOrder.shipping.fullName}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
-              Your botanical formulations are now being packed in natural linen and dispatched with carbon-neutral transit.
+            <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+              Your wildcrafted Nordic formulations have been reserved and prepared for carbon-neutral transit from the dispensary.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-[#EFF4EE] border border-[#DCE4DA] text-left text-xs space-y-2.5">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Order Reference:</span>
-              <span className="font-mono font-bold text-[#1A3326]">{orderId}</span>
+          {/* Official Invoice Card */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-[#EFF4EE] border border-[#DCE4DA] text-left text-xs space-y-4 shadow-inner">
+            {/* Order Ref & Payment Method Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#DCE4DA]">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">
+                  Order Reference
+                </span>
+                <span className="font-mono font-bold text-base text-[#1A3326] tracking-wide">
+                  {completedOrder.orderId}
+                </span>
+              </div>
+              <div className="sm:text-right">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-bold">
+                  Payment Channel
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1 font-semibold px-2.5 py-0.5 rounded-full text-[11px] mt-0.5 ${
+                    isCod
+                      ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                      : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>{completedOrder.paymentSummary}</span>
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Destination:</span>
-              <span className="font-medium text-[#1A3326] text-right">
-                {checkoutForm.address}, {checkoutForm.city}
-              </span>
+
+            {/* Recipient and Shipping Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block mb-0.5">
+                  Delivery Destination
+                </span>
+                <p className="font-medium text-[#1A3326]">
+                  {completedOrder.shipping.address}
+                </p>
+                <p className="text-slate-500">
+                  {completedOrder.shipping.city}, {completedOrder.shipping.postalCode}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold block mb-0.5">
+                  Contact & Verification
+                </span>
+                <p className="font-medium text-[#1A3326]">
+                  {completedOrder.shipping.phone}
+                </p>
+                <p className="text-slate-500 truncate">
+                  {completedOrder.shipping.email}
+                </p>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Transit Footprint:</span>
-              <span className="font-semibold text-[#7D9678]">100% Carbon-Neutral Offset</span>
+
+            {/* Purchased Items List */}
+            {completedOrder.items && completedOrder.items.length > 0 && (
+              <div className="pt-3 border-t border-[#DCE4DA] space-y-2.5">
+                <span className="text-[10px] text-slate-500 uppercase font-bold block">
+                  Purchased Formulations ({completedOrder.items.length})
+                </span>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {completedOrder.items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white/70 border border-[#DCE4DA]/80"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt=""
+                            className="w-10 h-10 rounded-lg object-cover border border-[#DCE4DA] shrink-0"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-bold text-[#1A3326] truncate leading-tight">
+                            {item.title}
+                          </p>
+                          <span className="text-[10px] text-slate-500 block">
+                            Qty: {item.quantity} {item.size ? `• ${item.size}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-bold text-[#1A3326] shrink-0">
+                        {formatCurrency(item.price * item.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Total Financial Summary */}
+            <div className="pt-3 border-t border-[#DCE4DA] space-y-1.5">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal</span>
+                <span>{formatCurrency(completedOrder.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Carbon-Neutral Delivery</span>
+                <span>
+                  {completedOrder.shippingFee === 0
+                    ? 'Complimentary'
+                    : formatCurrency(completedOrder.shippingFee)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm font-bold text-[#1A3326] pt-1.5 border-t border-[#DCE4DA]">
+                <span>
+                  Total Amount {isCod ? '(Due in Cash on Handover)' : '(Authorized & Settled)'}
+                </span>
+                <span className="text-[#C26747] text-base">
+                  {formatCurrency(completedOrder.total)}
+                </span>
+              </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setOrderComplete(false);
-              navigate('/series');
-            }}
-            className="w-full py-3.5 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Explore More Botanicals
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="w-full sm:w-1/2 py-3.5 rounded-full bg-white hover:bg-[#EFF4EE] border border-[#EBE6DC] text-[#1A3326] font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-[#7D9678]" />
+              <span>Print Order Receipt</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setOrderComplete(false);
+                setCompletedOrder(null);
+                navigate('/series');
+              }}
+              className="w-full sm:w-1/2 py-3.5 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <span>Explore More Botanicals</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -393,115 +496,17 @@ export default function BotanicalBagPage() {
         </div>
       </div>
 
-      {/* Checkout Flow Modal */}
-      <AnimatePresence>
-        {isCheckingOut && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
-              className="w-full max-w-lg bg-[#FBF9F5] rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#EBE6DC] max-h-[90vh] overflow-y-auto space-y-5"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-[#EBE6DC]">
-                <div>
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#7D9678]">
-                    Verified Nordic Gateway
-                  </span>
-                  <h3 className="font-botanical text-2xl font-bold text-[#1A3326]">
-                    Complete Your Harvest Order
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsCheckingOut(false)}
-                  className="text-slate-400 hover:text-[#1A3326] p-1.5 text-xs font-semibold cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <form onSubmit={handlePlaceOrder} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={checkoutForm.name}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={checkoutForm.email}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Delivery Address</label>
-                  <input
-                    type="text"
-                    required
-                    value={checkoutForm.address}
-                    onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">City</label>
-                    <input
-                      type="text"
-                      required
-                      value={checkoutForm.city}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">Postal Code</label>
-                    <input
-                      type="text"
-                      required
-                      value={checkoutForm.postalCode}
-                      onChange={(e) => setCheckoutForm({ ...checkoutForm, postalCode: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326]"
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#EFF4EE] border border-[#DCE4DA] flex items-center gap-2.5 text-xs text-[#1A3326]">
-                  <ShieldCheck className="w-4 h-4 text-[#7D9678] shrink-0" />
-                  <span>
-                    Test mode active: No actual credit card charge incurred.
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 rounded-full bg-[#C26747] hover:bg-[#1A3326] text-white font-semibold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <span>Preparing Harvest Package...</span>
-                  ) : (
-                    <span>Confirm Harvest Order ({formatCurrency(total)})</span>
-                  )}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Full-Featured Verified Payment Gateway Modal */}
+      <BotanicalPaymentModal
+        isOpen={isCheckingOut}
+        onClose={() => setIsCheckingOut(false)}
+        total={total}
+        subtotal={subtotal}
+        shippingFee={shippingFee}
+        isFreeShipping={isFreeShipping}
+        cartItems={cartItems}
+        onOrderSuccess={handleOrderSuccess}
+      />
     </div>
   );
 }
