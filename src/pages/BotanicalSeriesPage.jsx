@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Sparkles, Filter, ChevronRight } from 'lucide-react';
+import { Search, X, Sparkles, ChevronRight } from 'lucide-react';
 import { BOTANICAL_CATEGORIES } from '../data/categories';
 import { BOTANICAL_PRODUCTS } from '../data/botanicalProducts';
 import BotanicalProductCard from '../components/product/BotanicalProductCard';

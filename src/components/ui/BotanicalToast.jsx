@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Check, Info, X } from 'lucide-react';
+import { Sparkles, Check, X } from 'lucide-react';
 
 export default function BotanicalToast({ message, type = 'success', onClose }) {
   useEffect(() => {

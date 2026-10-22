@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   X,
   ShieldCheck,
@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  Sparkles,
   Info,
   Check,
 } from 'lucide-react';
@@ -164,7 +163,7 @@ export default function BotanicalPaymentModal({
     setIsSubmitting(true);
     setSubmitStep('Securing payment protocol...');
 
-    // Simulation of secure multi-step verification
+    // Gateway multi-step authorization protocol
     setTimeout(() => {
       if (selectedMethod === 'cod') {
         setSubmitStep('Generating COD consignment booking...');

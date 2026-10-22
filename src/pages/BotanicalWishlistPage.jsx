@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ArrowRight, ShoppingBag, Trash2, ChevronRight } from 'lucide-react';
+import { Heart, ArrowRight, ShoppingBag, ChevronRight } from 'lucide-react';
 import { useBotanicalWishlist } from '../context/BotanicalWishlistContext';
 import { useBotanicalCart } from '../context/BotanicalCartContext';
 import BotanicalProductCard from '../components/product/BotanicalProductCard';

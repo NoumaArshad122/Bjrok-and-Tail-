@@ -57,23 +57,23 @@ export default function FeaturedHeroSlider() {
   const currentIndex = ((page % FEATURED_SLIDES.length) + FEATURED_SLIDES.length) % FEATURED_SLIDES.length;
   const currentSlide = FEATURED_SLIDES[currentIndex];
 
-  const paginate = (newDirection) => {
-    setPage([page + newDirection, newDirection]);
-  };
+  const paginate = React.useCallback((newDirection) => {
+    setPage(([prevPage]) => [prevPage + newDirection, newDirection]);
+  }, []);
 
   const jumpToSlide = (idx) => {
     const dir = idx > currentIndex ? 1 : -1;
     setPage([idx, dir]);
   };
 
-  // Auto-slide cycle with 0.5s transition animation
+  // Auto-slide cycle with calm luxury pacing
   useEffect(() => {
     if (isPaused) return;
     const timer = setInterval(() => {
       paginate(1);
-    }, 3800);
+    }, 4000);
     return () => clearInterval(timer);
-  }, [page, isPaused]);
+  }, [isPaused, paginate]);
 
   return (
     <div

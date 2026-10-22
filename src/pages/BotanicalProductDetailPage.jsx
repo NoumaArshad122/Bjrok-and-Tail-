@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronLeft,
   ChevronDown,
   ChevronUp,
   Minus,
@@ -14,7 +13,6 @@ import {
   ShieldCheck,
   Leaf,
   Check,
-  Compass,
   ChevronRight,
   Truck,
   RotateCcw,
@@ -22,7 +20,7 @@ import {
 import { BOTANICAL_PRODUCTS } from '../data/botanicalProducts';
 import { useBotanicalCart } from '../context/BotanicalCartContext';
 import { useBotanicalWishlist } from '../context/BotanicalWishlistContext';
-import { formatCurrency, calculateDiscount } from '../../src/lib/formatCurrency';
+import { formatCurrency, calculateDiscount } from '../lib/formatCurrency';
 import BotanicalProductCard from '../components/product/BotanicalProductCard';
 
 export default function BotanicalProductDetailPage() {
@@ -127,14 +125,14 @@ export default function BotanicalProductDetailPage() {
               transition={{ duration: 0.45, ease: 'easeOut' }}
             />
 
-            {/* Harvest & Discount Tag */}
-            <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10">
+            {/* Harvest & Season Tag */}
+            <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
               {discount > 0 && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#C26747] text-white shadow-md">
-                  -{discount}% Seasonal Offer
+                <span className="px-3 py-1 rounded-full text-[10px] font-medium uppercase tracking-widest bg-[#C26747] text-white shadow-sm">
+                  Harvest Special
                 </span>
               )}
-              <span className="px-3 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-[#1A3326]/85 backdrop-blur-md text-[#FBF9F5]">
+              <span className="px-3 py-1 rounded-full text-[9.5px] font-medium tracking-widest uppercase bg-[#1A3326]/85 backdrop-blur-md text-[#FBF9F5]">
                 {product.harvestSeason}
               </span>
             </div>

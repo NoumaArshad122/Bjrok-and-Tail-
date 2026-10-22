@@ -5,12 +5,6 @@ import {
   ArrowRight,
   Sparkles,
   Leaf,
-  Sun,
-  ShieldCheck,
-  Compass,
-  Star,
-  Check,
-  Feather,
 } from 'lucide-react';
 import { BOTANICAL_CATEGORIES } from '../data/categories';
 import { BOTANICAL_PRODUCTS } from '../data/botanicalProducts';
@@ -53,12 +47,12 @@ export default function BotanicalHomePage() {
         {/* Left Column: Greeting & Narrative */}
         <div className="lg:col-span-6 xl:col-span-7 space-y-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#7D9678] animate-ping" />
-            <span className="text-xs uppercase tracking-widest font-semibold text-[#7D9678]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678]" />
+            <span className="text-[11px] uppercase tracking-[0.16em] font-medium text-[#7D9678]">
               {getGreeting()}, {STORE_CONFIG.defaultShopperName} • Arctic Harvest 2026
             </span>
           </div>
-          <h1 className="font-botanical text-3xl sm:text-5xl lg:text-6xl font-bold text-[#1A3326] tracking-tight leading-tight">
+          <h1 className="font-botanical text-3xl sm:text-5xl lg:text-6xl font-semibold text-[#1A3326] tracking-tight leading-[1.08]">
             Nordic Botanical Calm
           </h1>
           <p className="text-xs sm:text-base text-slate-600 max-w-xl leading-relaxed">
@@ -68,7 +62,7 @@ export default function BotanicalHomePage() {
           <div className="flex items-center gap-3 pt-2 flex-wrap">
             <Link
               to="/series"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white text-xs sm:text-sm font-semibold shadow-md transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer"
             >
               <span>Explore All Series</span>
               <ArrowRight className="w-4 h-4" />
@@ -76,7 +70,7 @@ export default function BotanicalHomePage() {
 
             <Link
               to="/series?category=elixirs"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white hover:bg-[#EFF4EE] border border-[#EBE6DC] text-[#1A3326] hover:text-[#C26747] text-xs sm:text-sm font-semibold transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white hover:bg-[#EFF4EE] border border-[#EBE6DC] text-[#1A3326] hover:text-[#C26747] text-xs sm:text-sm font-medium transition-colors cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-[#C26747]" />
               <span>Seasonal Elixirs</span>
@@ -107,18 +101,18 @@ export default function BotanicalHomePage() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.08, ease: [0.2, 0.8, 0.2, 1] }}
-        className="space-y-4"
+        className="space-y-5"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Leaf className="w-4 h-4 text-[#7D9678]" />
-            <h2 className="font-botanical text-xl lg:text-2xl font-bold text-[#1A3326]">
+            <h2 className="font-botanical text-xl lg:text-2xl font-semibold text-[#1A3326]">
               Explore by Botanical Craft
             </h2>
           </div>
           <Link
             to="/series"
-            className="text-xs font-bold text-[#C26747] hover:underline flex items-center gap-1"
+            className="text-xs font-semibold text-[#C26747] hover:underline flex items-center gap-1"
           >
             <span>View All Departments</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -131,22 +125,22 @@ export default function BotanicalHomePage() {
             <Link
               key={cat.id}
               to={`/series?category=${cat.slug}`}
-              className="group p-4 rounded-3xl bg-[#FBF9F5] border border-[#EBE6DC] hover:border-[#C26747] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center text-center"
+              className="group p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] hover:border-[#1A3326]/40 transition-all duration-300 flex flex-col items-center text-center"
             >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden p-1 border-2 border-[#EBE6DC] group-hover:border-[#C26747] transition-all bg-white mb-3 shadow-inner">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden p-1 border border-[#EBE6DC] group-hover:border-[#1A3326] transition-all bg-white mb-3">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="w-full h-full object-cover rounded-full group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-cover rounded-full group-hover:scale-106 transition-transform duration-500"
                 />
               </div>
-              <h3 className="font-botanical text-base font-bold text-[#1A3326] group-hover:text-[#C26747] transition-colors">
+              <h3 className="font-botanical text-base font-semibold text-[#1A3326] group-hover:text-[#C26747] transition-colors">
                 {cat.name}
               </h3>
               <span className="text-[10px] text-[#7D9678] italic font-serif mt-0.5">
                 {cat.swedishName}
               </span>
-              <span className="text-[11px] font-medium text-slate-500 mt-1">
+              <span className="text-[10px] font-medium tracking-wider text-slate-400 uppercase mt-1">
                 {cat.count} Formulations
               </span>
             </Link>
@@ -249,28 +243,26 @@ export default function BotanicalHomePage() {
           <div className="lg:col-span-5 relative flex items-center justify-center">
             <Link
               to={`/product/${heroProduct.slug}`}
-              className="relative group block aspect-square w-64 sm:w-80 lg:w-96 rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/10"
+              className="relative group block aspect-square w-64 sm:w-80 lg:w-96 rounded-2xl overflow-hidden ring-1 ring-white/15"
             >
               <img
                 src={heroProduct.images[0]}
                 alt={heroProduct.title}
-                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
+                className="w-full h-full object-cover group-hover:scale-104 transition-transform duration-700 ease-out"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1A3326]/75 via-transparent to-transparent pointer-events-none" />
 
-              <div className="absolute bottom-5 left-5 right-5 bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/15 flex items-center justify-between">
+              <div className="absolute bottom-4 inset-x-4 flex items-center justify-between text-xs text-[#F4F1EA]">
                 <div>
-                  <span className="text-[10px] text-[#DCE4DA] block uppercase tracking-wider font-semibold">
-                    Customer Evaluation
+                  <span className="text-[9px] uppercase tracking-widest text-[#DCE4DA]/80 font-medium block">
+                    Harvest Series 01
                   </span>
-                  <div className="flex items-center gap-1 text-amber-300">
-                    <Star className="w-3.5 h-3.5 fill-amber-300 stroke-amber-300" />
-                    <span className="text-xs font-bold text-white">4.9 / 5.0</span>
-                    <span className="text-[10px] text-[#DCE4DA]">(142 verified)</span>
-                  </div>
+                  <span className="font-botanical text-sm font-semibold text-white">
+                    {heroProduct.title}
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-[#E8C5A8] bg-white/10 px-2.5 py-1 rounded-full">
-                  100% Wildcraft
+                <span className="text-[9.5px] uppercase tracking-wider font-semibold text-[#1A3326] bg-[#FBF9F5]/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm">
+                  Dispensary Reserve
                 </span>
               </div>
             </Link>
@@ -287,10 +279,10 @@ export default function BotanicalHomePage() {
       >
         <div className="flex items-end justify-between">
           <div>
-            <span className="text-xs uppercase font-bold tracking-widest text-[#7D9678]">
+            <span className="text-[11px] uppercase tracking-[0.16em] font-medium text-[#7D9678]">
               Small-Batch Dispensary
             </span>
-            <h2 className="font-botanical text-2xl sm:text-4xl font-bold text-[#1A3326] mt-0.5">
+            <h2 className="font-botanical text-2xl sm:text-4xl font-semibold text-[#1A3326] mt-0.5">
               The Curated Collection
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
@@ -299,7 +291,7 @@ export default function BotanicalHomePage() {
           </div>
           <Link
             to="/series"
-            className="text-xs sm:text-sm font-bold text-[#C26747] hover:underline flex items-center gap-1"
+            className="text-xs sm:text-sm font-semibold text-[#C26747] hover:underline flex items-center gap-1"
           >
             <span>View All ({BOTANICAL_PRODUCTS.length})</span>
             <ArrowRight className="w-4 h-4" />
@@ -314,53 +306,53 @@ export default function BotanicalHomePage() {
         </div>
       </motion.div>
 
-      {/* 5. Dispensary Pillars of Excellence (Laptop Feature) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-6 border-y border-[#EBE6DC]">
-        <div className="p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EFF4EE] text-[#7D9678] flex items-center justify-center">
-            <Feather className="w-5 h-5" />
-          </div>
-          <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+      {/* 5. Dispensary Pillars of Excellence — Minimalist Editorial Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 py-10 border-y border-[#EBE6DC]">
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-mono text-[#7D9678] tracking-widest block font-medium">
+            01 / HARVEST
+          </span>
+          <h4 className="font-botanical text-lg font-semibold text-[#1A3326]">
             Zero-Harm Wildcraft
           </h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Hand-gathered with traditional scythes, honoring strict non-depletion forestry treaties.
+            Hand-gathered with traditional scythes in Swedish Lapland, honoring strict subarctic non-depletion forestry treaties.
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EFF4EE] text-[#C26747] flex items-center justify-center">
-            <Sun className="w-5 h-5" />
-          </div>
-          <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-mono text-[#C26747] tracking-widest block font-medium">
+            02 / BOTANY
+          </span>
+          <h4 className="font-botanical text-lg font-semibold text-[#1A3326]">
             Midnight Sun Energy
           </h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Arctic plants adapt to 24-hour summer daylight, producing rich carotenes and protective flavonoids.
+            Arctic plants adapt to 24-hour continuous summer daylight, synthesizing concentrated bioflavonoids and antioxidant resins.
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EFF4EE] text-[#1A3326] flex items-center justify-center">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-mono text-[#1A3326] tracking-widest block font-medium">
+            03 / PRESERVATION
+          </span>
+          <h4 className="font-botanical text-lg font-semibold text-[#1A3326]">
             Miron Violet Glass
           </h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Ancient biophotonic violet glass protects delicate living plant essences from degradation.
+            Biophotonic violet apothecary glass acts as a natural energetic filter, protecting living plant essences from oxidative decay.
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-2">
-          <div className="w-10 h-10 rounded-xl bg-[#EFF4EE] text-[#7D9678] flex items-center justify-center">
-            <Compass className="w-5 h-5" />
-          </div>
-          <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+        <div className="space-y-2.5">
+          <span className="text-[11px] font-mono text-[#7D9678] tracking-widest block font-medium">
+            04 / ECOLOGY
+          </span>
+          <h4 className="font-botanical text-lg font-semibold text-[#1A3326]">
             Carbon-Neutral Transit
           </h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Offset through verified rewilding reserves across northern Scandinavia and Finland.
+            Fully climate positive logistics, offset through verified peatland rewilding reserves across northern Scandinavia.
           </p>
         </div>
       </div>

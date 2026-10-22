@@ -8,9 +8,7 @@ import {
   ShoppingBag,
   Heart,
   Search,
-  Sparkles,
   ArrowRight,
-  Leaf,
 } from 'lucide-react';
 import { useBotanicalCart } from '../../context/BotanicalCartContext';
 import { useBotanicalWishlist } from '../../context/BotanicalWishlistContext';
@@ -73,7 +71,7 @@ export default function BotanicalHeader() {
         <div className="hidden lg:block bg-[#1A3326] text-[#FBF9F5] text-[11px] py-1.5 px-4 font-medium border-b border-[#254736]">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678] animate-ping" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678]" />
               <span className="text-[#DCE4DA]">
                 Arctic Harvest 2026 • Wildcrafted in Swedish Lapland (68°N)
               </span>
@@ -83,7 +81,7 @@ export default function BotanicalHeader() {
                 Free Nordic Transit on orders over {formatCurrency(STORE_CONFIG.freeShippingThreshold)}
               </span>
               <span>•</span>
-              <span className="text-white font-semibold">Tromsø & Stockholm Dispensary</span>
+              <span className="text-white font-medium">Tromsø & Stockholm Dispensary</span>
             </div>
           </div>
         </div>
@@ -131,8 +129,8 @@ export default function BotanicalHeader() {
             </Link>
           </div>
 
-          {/* Center: Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 text-xs font-semibold text-[#1A3326]">
+          {/* Center: Desktop Minimalist Editorial Navigation */}
+          <nav className="hidden lg:flex items-center gap-6 text-[11px] font-medium tracking-[0.16em] uppercase text-[#1A3326]">
             {navLinks.map((link) => {
               const isActive =
                 link.to === '/'
@@ -143,10 +141,10 @@ export default function BotanicalHeader() {
                 <Link
                   key={link.label}
                   to={link.to}
-                  className={`px-3 py-2 rounded-full transition-all ${
+                  className={`relative py-1 transition-colors ${
                     isActive
-                      ? 'bg-[#1A3326] text-[#FBF9F5] shadow-sm hover:bg-[#C26747]'
-                      : 'text-[#1A3326]/80 hover:text-[#C26747] hover:bg-[#EBE6DC]/50'
+                      ? 'text-[#1A3326] font-semibold after:absolute after:bottom-0 after:inset-x-0 after:h-[1.5px] after:bg-[#1A3326]'
+                      : 'text-[#1A3326]/70 hover:text-[#C26747]'
                   }`}
                 >
                   {link.label}

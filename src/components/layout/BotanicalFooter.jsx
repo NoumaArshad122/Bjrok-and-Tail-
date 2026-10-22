@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Feather, Compass, ShieldCheck, Mail, ArrowRight, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { STORE_CONFIG } from '../../config/storeConfig';
 
 export default function BotanicalFooter() {

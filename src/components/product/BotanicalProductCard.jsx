@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Check, Heart, Sparkles } from 'lucide-react';
+import { Plus, Check, Heart } from 'lucide-react';
 import { useBotanicalCart } from '../../context/BotanicalCartContext';
 import { useBotanicalWishlist } from '../../context/BotanicalWishlistContext';
 import { formatCurrency, calculateDiscount } from '../../lib/formatCurrency';
@@ -37,52 +37,51 @@ export default function BotanicalProductCard({ product }) {
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
-      className="group relative bg-[#FBF9F5] rounded-3xl p-3 sm:p-3.5 border border-[#EBE6DC] shadow-sm hover:shadow-xl hover:shadow-[#1A3326]/5 transition-all flex flex-col justify-between overflow-hidden"
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
+      className="group relative bg-[#FBF9F5] rounded-2xl p-3 sm:p-4 border border-[#EBE6DC] hover:border-[#1A3326]/40 transition-all duration-300 flex flex-col justify-between overflow-hidden"
     >
       <div>
         {/* Product Art Frame */}
-        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#EFF4EE] mb-2.5 sm:mb-3">
+        <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#EFF4EE] mb-3">
           <Link to={`/product/${product.slug}`} className="block w-full h-full">
             <motion.img
               src={product.images[0]}
               alt={product.title}
               loading="lazy"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+              whileHover={{ scale: 1.04 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
               className="w-full h-full object-cover object-center"
             />
           </Link>
 
-          {/* Sale or Seasonal Badge */}
-          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-            {discount > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#C26747] text-white shadow-sm">
-                -{discount}% Harvest
-              </span>
-            )}
-            {product.tag && (
-              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-semibold tracking-wider uppercase bg-[#1A3326]/80 backdrop-blur-sm text-[#FBF9F5]">
+          {/* Understated Editorial Tags */}
+          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
+            {product.tag ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-medium tracking-wider uppercase bg-[#1A3326]/85 backdrop-blur-sm text-[#FBF9F5]">
                 {product.tag}
               </span>
-            )}
+            ) : discount > 0 ? (
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-medium tracking-wider uppercase bg-[#C26747] text-white">
+                Harvest Special
+              </span>
+            ) : null}
           </div>
 
-          {/* Wishlist Button */}
+          {/* Minimal Wishlist Button */}
           <button
             type="button"
             onClick={handleWishlist}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Save to wishlist'}
-            className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md shadow-sm transition-all cursor-pointer ${
+            className={`absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
               inWishlist
                 ? 'bg-[#C26747] text-white hover:bg-[#1A3326]'
-                : 'bg-white/80 text-[#1A3326] hover:bg-[#C26747] hover:text-white'
+                : 'bg-white/80 text-[#1A3326] hover:bg-white hover:text-[#C26747]'
             }`}
           >
             <Heart
               className={`w-3.5 h-3.5 ${
-                inWishlist ? 'fill-white stroke-white' : 'stroke-[2]'
+                inWishlist ? 'fill-white stroke-white' : 'stroke-[1.75]'
               }`}
             />
           </button>
@@ -90,11 +89,11 @@ export default function BotanicalProductCard({ product }) {
 
         {/* Botanical Details */}
         <div className="space-y-1">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-[#7D9678] block">
+          <span className="text-[9.5px] uppercase font-semibold tracking-widest text-[#7D9678] block">
             {product.categoryName} • {product.size}
           </span>
 
-          <h3 className="font-botanical text-sm sm:text-base font-bold text-[#1A3326] group-hover:text-[#C26747] transition-colors leading-snug line-clamp-1">
+          <h3 className="font-botanical text-sm sm:text-base font-semibold text-[#1A3326] group-hover:text-[#C26747] transition-colors leading-snug line-clamp-1">
             <Link to={`/product/${product.slug}`}>{product.title}</Link>
           </h3>
 
@@ -105,9 +104,9 @@ export default function BotanicalProductCard({ product }) {
       </div>
 
       {/* Footer Price & Add Button */}
-      <div className="mt-2.5 sm:mt-3 pt-2.5 sm:pt-3 border-t border-[#EBE6DC]/80 flex items-center justify-between gap-1.5 min-w-0">
+      <div className="mt-3 pt-2.5 border-t border-[#EBE6DC] flex items-center justify-between gap-1.5 min-w-0">
         <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-1.5 min-w-0">
-          <span className="text-xs sm:text-sm font-bold text-[#1A3326] leading-tight whitespace-nowrap">
+          <span className="text-xs sm:text-sm font-semibold text-[#1A3326] leading-tight whitespace-nowrap">
             {formatCurrency(product.price)}
           </span>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
@@ -117,26 +116,26 @@ export default function BotanicalProductCard({ product }) {
           )}
         </div>
 
-        {/* Quick Add Button with Tap Scale Animation */}
+        {/* Quick Add Button with Clean Minimalist Styling */}
         <motion.button
           type="button"
-          whileTap={{ scale: 0.9 }}
+          whileTap={{ scale: 0.92 }}
           onClick={handleQuickAdd}
           aria-label={`Add ${product.title} to bag`}
-          className={`h-7 sm:h-8 px-2 sm:px-3 rounded-full flex items-center justify-center gap-1 text-[11px] sm:text-xs font-semibold shadow-sm transition-all cursor-pointer shrink-0 ${
+          className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-full flex items-center justify-center gap-1 text-[11px] font-medium tracking-wide transition-all cursor-pointer shrink-0 ${
             justAdded
               ? 'bg-[#1A3326] text-[#FBF9F5] hover:bg-[#C26747]'
-              : 'bg-[#C26747] hover:bg-[#1A3326] text-white'
+              : 'bg-[#C26747] hover:bg-[#1A3326] text-white shadow-sm'
           }`}
         >
           {justAdded ? (
             <>
-              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Check className="w-3 h-3 stroke-[2.2]" />
               <span className="text-[10px] sm:text-[11px] whitespace-nowrap">In Bag</span>
             </>
           ) : (
             <>
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <Plus className="w-3 h-3 stroke-[2.2]" />
               <span className="text-[10px] sm:text-[11px] whitespace-nowrap">Add</span>
             </>
           )}

@@ -15,10 +15,9 @@ import {
   Lock,
   ChevronRight,
   Printer,
-  Receipt,
 } from 'lucide-react';
 import { useBotanicalCart } from '../context/BotanicalCartContext';
-import { formatCurrency } from '../../src/lib/formatCurrency';
+import { formatCurrency } from '../lib/formatCurrency';
 import { STORE_CONFIG } from '../config/storeConfig';
 import BotanicalPaymentModal from '../components/checkout/BotanicalPaymentModal';
 import confetti from 'canvas-confetti';
@@ -61,7 +60,9 @@ export default function BotanicalBagPage() {
         origin: { y: 0.6 },
         colors: ['#1A3326', '#C26747', '#7D9678', '#FBF9F5', '#00A859', '#D32F2F', '#00838F'],
       });
-    } catch (err) {}
+    } catch {
+      // Optional confetti animation fallback
+    }
   };
 
   // Order Complete View
@@ -303,11 +304,11 @@ export default function BotanicalBagPage() {
         {/* Left Column: Line Items & Free Shipping Meter */}
         <div className="lg:col-span-7 space-y-4">
           {/* Free Shipping Alert Box */}
-          <div className="p-4 rounded-3xl bg-[#EFF4EE] border border-[#DCE4DA] flex items-center justify-between text-xs text-[#1A3326]">
+          <div className="p-4 rounded-2xl bg-[#EFF4EE] border border-[#DCE4DA] flex items-center justify-between text-xs text-[#1A3326]">
             <div className="flex items-center gap-2.5">
-              <Truck className="w-5 h-5 text-[#7D9678] shrink-0" />
+              <Truck className="w-4 h-4 text-[#7D9678] shrink-0" />
               {isFreeShipping ? (
-                <span className="font-semibold text-[#1A3326]">
+                <span className="font-medium text-[#1A3326]">
                   ✓ Unlocked: <strong>Free Carbon-Neutral Nordic Transit</strong>.
                 </span>
               ) : (
@@ -316,7 +317,7 @@ export default function BotanicalBagPage() {
                 </span>
               )}
             </div>
-            <span className="font-bold text-[#7D9678]">{freeShippingProgress}%</span>
+            <span className="font-semibold text-[#7D9678]">{freeShippingProgress}%</span>
           </div>
 
           {/* Cart Items List */}
@@ -330,7 +331,7 @@ export default function BotanicalBagPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
                   transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="p-4 rounded-3xl bg-[#FBF9F5] border border-[#EBE6DC] flex gap-4 items-center shadow-sm hover:shadow-md transition-shadow"
+                  className="p-4 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] flex gap-4 items-center transition-all"
                 >
                   {/* Thumbnail */}
                   <Link
@@ -404,23 +405,23 @@ export default function BotanicalBagPage() {
         {/* Right Column: Gift Progress & Order Summary (Sticky on Laptop) */}
         <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-5">
           {/* Complimentary Gift Progress Card ($100 Threshold) */}
-          <div className="p-5 rounded-3xl bg-[#FBF9F5] border border-[#EBE6DC] shadow-sm space-y-3">
+          <div className="p-5 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#C26747]/15 text-[#C26747] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-xl bg-[#C26747]/15 text-[#C26747] flex items-center justify-center shrink-0 mt-0.5">
                 <Gift className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-bold text-[#1A3326]">
+                  <span className="text-xs font-semibold text-[#1A3326]">
                     Complimentary Gift Ritual
                   </span>
-                  <span className="text-xs font-bold text-[#C26747]">
+                  <span className="text-xs font-semibold text-[#C26747]">
                     {giftProgress}%
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                   {isGiftUnlocked ? (
-                    <span className="text-[#1A3326] font-semibold flex items-center gap-1">
+                    <span className="text-[#1A3326] font-medium flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5 text-[#C26747]" />
                       Unlocked: {complimentaryGift.name} ({formatCurrency(complimentaryGift.value)})
                     </span>
@@ -433,7 +434,7 @@ export default function BotanicalBagPage() {
               </div>
             </div>
 
-            <div className="w-full bg-[#EBE6DC] h-2.5 rounded-full overflow-hidden">
+            <div className="w-full bg-[#EBE6DC] h-2 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-[#7D9678] to-[#C26747] rounded-full"
                 initial={{ width: 0 }}
@@ -444,8 +445,8 @@ export default function BotanicalBagPage() {
           </div>
 
           {/* Bag Summary Box */}
-          <div className="p-6 rounded-3xl bg-[#FBF9F5] border border-[#EBE6DC] shadow-sm space-y-4">
-            <h2 className="font-botanical text-xl font-bold text-[#1A3326] pb-3 border-b border-[#EBE6DC]">
+          <div className="p-6 rounded-2xl bg-[#FBF9F5] border border-[#EBE6DC] space-y-4">
+            <h2 className="font-botanical text-xl font-semibold text-[#1A3326] pb-3 border-b border-[#EBE6DC]">
               Valuation & Summary
             </h2>
 
