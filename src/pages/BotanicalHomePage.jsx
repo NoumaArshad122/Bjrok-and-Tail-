@@ -27,13 +27,13 @@ export default function BotanicalHomePage({ onOpenStory }) {
   return (
     <div className="pb-28 lg:pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 lg:space-y-16 animate-in fade-in duration-300">
       {/* ========================================================= */}
-      {/* 1. ATMOSPHERIC NORDIC FOREST HERO SHOWCASE                */}
+      {/* 1. ATMOSPHERIC NORDIC FOREST EDITORIAL HERO (NO NESTED SLIDER) */}
       {/* ========================================================= */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
-        className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] border border-[#1A3326]/20 shadow-2xl bg-[#09150D]"
+        className="relative overflow-hidden rounded-[2.2rem] sm:rounded-[2.8rem] border border-[#1A3326]/20 shadow-2xl bg-[#07130B]"
       >
         {/* Background Image Layer with Luxury Dark Forest Overlays */}
         <div className="absolute inset-0 z-0">
@@ -43,146 +43,116 @@ export default function BotanicalHomePage({ onOpenStory }) {
             className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-1000 ease-out"
           />
           {/* Multi-layered directional gradient overlays for pristine contrast and Nordic ambiance */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#07130B]/95 via-[#0D1F13]/85 to-[#07130B]/70" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#07130B] via-[#07130B]/40 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#061109]/95 via-[#0A1A0F]/85 to-[#061109]/70" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#061109] via-[#061109]/50 to-black/35" />
           {/* Subtle amber sunbeam & aurora auras */}
           <div className="absolute -top-24 right-1/4 w-96 h-96 rounded-full bg-[#C26747]/15 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 left-1/4 w-96 h-96 rounded-full bg-[#7D9678]/15 blur-3xl pointer-events-none" />
         </div>
 
         {/* Content Container (Elevated Z-Index) */}
-        <div className="relative z-10 p-5 sm:p-8 lg:p-12">
-          {/* ========================================================= */}
-          {/* 1A. MOBILE-EXCLUSIVE HERO (< lg)                         */}
-          {/* ========================================================= */}
-          <div className="lg:hidden space-y-4">
-            {/* Top Micro-Badge with Pulse Indicator */}
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10.5px] uppercase font-bold tracking-[0.16em] text-[#E8DCC8] shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#E8C5A8] animate-pulse" />
-                <span>Swedish Lapland • 68°N</span>
-              </div>
-              <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-[#E8C5A8]">
-                Harvest 2026
+        <div className="relative z-10 px-6 py-9 sm:p-12 lg:p-16 flex flex-col justify-between space-y-7 sm:space-y-8">
+          {/* Top Micro-Badge Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10.5px] uppercase font-bold tracking-[0.18em] text-[#E8DCC8] shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-[#E8C5A8] animate-pulse" />
+              <span>Swedish Lapland • 68°N Latitude</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] uppercase font-mono tracking-widest text-[#E8C5A8]">
+              <span className="hidden sm:inline">Arctic Harvest</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15">
+                Batch 2026 Ready
               </span>
             </div>
+          </div>
 
-            {/* Editorial Headline & Poetic Subtitle */}
-            <div className="space-y-1.5">
-              <h1 className="font-botanical text-[2.2rem] leading-[1.06] font-semibold text-[#FBF9F5] tracking-tight drop-shadow-sm">
-                Subarctic Botanical Calm
-              </h1>
-              <p className="text-xs text-[#DCD4C7] leading-relaxed font-sans">
-                Hand-harvested wildcraft elixirs, soothing resin salves, and forest teas, bottled in biophotonic Miron violet glass.
-              </p>
-            </div>
+          {/* Central Editorial Typographic Statement */}
+          <div className="space-y-4 max-w-3xl">
+            <h1 className="font-botanical text-[2.4rem] sm:text-5xl lg:text-7xl font-semibold text-[#FBF9F5] tracking-tight leading-[1.04] drop-shadow-sm">
+              Subarctic Botanical{' '}
+              <span className="italic font-light text-[#E8C5A8]">Calm</span>
+            </h1>
 
-            {/* Sensory Visual Hero Slider (Directly Visible Above the Fold) */}
-            <div className="relative pt-1">
-              <FeaturedHeroSlider />
-            </div>
+            <p className="text-xs sm:text-base lg:text-lg text-[#DCD4C7] leading-relaxed max-w-2xl font-sans font-light">
+              Hand-harvested wildcraft elixirs, soothing conifer resin balms, and slow-crafted forest teas from Swedish Lapland (68°N). Compounded in small batches and cold-chain dispatched worldwide in biophotonic Miron violet glass.
+            </p>
 
-            {/* Tactile Mobile Action Buttons */}
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <Link
-                to="/series"
-                className="py-3 px-4 rounded-full bg-[#C26747] hover:bg-[#A85335] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-lg shadow-[#C26747]/25 transition-all cursor-pointer"
-              >
-                <span>Explore Series</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-
-              <Link
-                to="/series?category=elixirs"
-                className="py-3 px-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-[#FBF9F5] text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#E8C5A8]" />
-                <span>Seasonal Drops</span>
-              </Link>
-            </div>
-
-            {/* Horizontal Luxury Quality Badges Scroller */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-none text-[10.5px]">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8] font-medium shrink-0 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C26747]" />
-                <span>68°N Arctic Lapland</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8] font-medium shrink-0 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678]" />
-                <span>Miron Violet Glass</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8] font-medium shrink-0 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                <span>Zero-Depletion Treaty</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8] font-medium shrink-0 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>Cold-Chain Transit</span>
+            {/* Signature Wild Harvest Botanical Notes Pills */}
+            <div className="pt-2">
+              <span className="text-[10px] uppercase tracking-widest text-[#E8C5A8]/85 font-bold block mb-2 font-mono">
+                Signature Lapland Terroirs:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-[#FBF9F5] flex items-center gap-1.5 shadow-2xs">
+                  <span>🌲</span>
+                  <span className="font-medium">Scots Pine Resin</span>
+                  <span className="text-[10px] text-[#E8C5A8] hidden sm:inline">(Pinus sylvestris)</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-[#FBF9F5] flex items-center gap-1.5 shadow-2xs">
+                  <span>🍄</span>
+                  <span className="font-medium">Arctic Wild Chaga</span>
+                  <span className="text-[10px] text-[#E8C5A8] hidden sm:inline">(Inonotus obliquus)</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-[#FBF9F5] flex items-center gap-1.5 shadow-2xs">
+                  <span>🌿</span>
+                  <span className="font-medium">White Birch Sap</span>
+                  <span className="text-[10px] text-[#E8C5A8] hidden sm:inline">(Betula pendula)</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-[#FBF9F5] flex items-center gap-1.5 shadow-2xs">
+                  <span>🟠</span>
+                  <span className="font-medium">Peatland Cloudberry</span>
+                  <span className="text-[10px] text-[#E8C5A8] hidden sm:inline">(Rubus chamaemorus)</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ========================================================= */}
-          {/* 1B. DESKTOP-EXCLUSIVE HERO (2-Column Desktop lg+)         */}
-          {/* ========================================================= */}
-          <div className="hidden lg:grid grid-cols-12 gap-8 xl:gap-12 items-center">
-            {/* Left Column: Narrative */}
-            <div className="col-span-7 space-y-5">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-[#7D9678] animate-pulse" />
-                <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-[#E8C5A8]">
-                  Nordic Botanical Dispensary • Arctic Harvest Batch 2026
-                </span>
-              </div>
+          {/* Tactical Action Buttons Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+            <Link
+              to="/series"
+              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 sm:py-4 rounded-full bg-[#C26747] hover:bg-[#A85335] text-white text-xs sm:text-sm font-semibold transition-all duration-300 shadow-xl shadow-[#C26747]/30 hover:shadow-2xl hover:shadow-[#C26747]/40 cursor-pointer"
+            >
+              <span>Explore All Series</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
 
-              <h1 className="font-botanical text-5xl xl:text-6xl font-semibold text-[#FBF9F5] tracking-tight leading-[1.08] drop-shadow-sm">
-                Subarctic Botanical Calm
-              </h1>
+            <Link
+              to="/series?category=elixirs"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-4 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-[#FBF9F5] text-xs sm:text-sm font-medium transition-all duration-300 shadow-xs cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-[#E8C5A8]" />
+              <span>Seasonal Drops</span>
+            </Link>
 
-              <p className="text-base text-[#DCD4C7] max-w-xl leading-relaxed">
-                Hand-harvested wildcraft elixirs, soothing conifer resin balms, and slow-crafted forest teas from Swedish Lapland (68°N). Compounded in small batches and cold-chain dispatched worldwide.
-              </p>
+            {onOpenStory && (
+              <button
+                type="button"
+                onClick={() => onOpenStory('values')}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 sm:py-4 rounded-full bg-transparent hover:bg-white/5 border border-white/15 text-[#E8DCC8] hover:text-white text-xs sm:text-sm font-medium transition-all duration-300 cursor-pointer"
+              >
+                <span>The Lapland Story</span>
+              </button>
+            )}
+          </div>
 
-              <div className="flex items-center gap-3.5 pt-2 flex-wrap">
-                <Link
-                  to="/series"
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#C26747] hover:bg-[#A85335] text-white text-sm font-semibold transition-all duration-300 cursor-pointer shadow-lg shadow-[#C26747]/25 hover:shadow-xl hover:shadow-[#C26747]/35"
-                >
-                  <span>Explore All Series</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-
-                <Link
-                  to="/series?category=elixirs"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/25 text-[#FBF9F5] hover:text-[#E8C5A8] text-sm font-medium transition-all duration-300 cursor-pointer shadow-xs"
-                >
-                  <Sparkles className="w-4 h-4 text-[#E8C5A8]" />
-                  <span>Seasonal Elixirs</span>
-                </Link>
-              </div>
-
-              {/* Dispensary provenance highlights in frosted pills */}
-              <div className="pt-3 flex items-center gap-4 text-xs font-medium flex-wrap">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C26747]" />
-                  <span>Wildcrafted in Swedish Lapland (68°N)</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678]" />
-                  <span>Zero-Depletion Harvesting</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[#E8DCC8]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Miron Violet Glass Protection</span>
-                </div>
-              </div>
+          {/* Integrated Frosted Trust Footer Strip */}
+          <div className="pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-4 gap-3 text-[11.5px] text-[#DCD4C7] font-medium">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#C26747] shrink-0" />
+              <span>68°N Arctic Lapland Harvest</span>
             </div>
-
-            {/* Right Column: Featured Slider Showcase */}
-            <div className="col-span-5">
-              <div className="p-2 sm:p-2.5 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/15 shadow-xl">
-                <FeaturedHeroSlider />
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#7D9678] shrink-0" />
+              <span>Zero-Depletion Harvesting</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+              <span>Miron Violet Biophotonic Glass</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span>Cold-Chain Transit Dispatched</span>
             </div>
           </div>
         </div>
@@ -237,6 +207,33 @@ export default function BotanicalHomePage({ onOpenStory }) {
             </Link>
           ))}
         </div>
+      </motion.div>
+
+      {/* 2B. Seasonal Harvest Extractions Showcase */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
+        className="space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-[11px] uppercase tracking-widest font-bold text-[#7D9678] font-mono">
+              Live Formulary Showcase
+            </span>
+            <h2 className="font-botanical text-xl lg:text-2xl font-semibold text-[#1A3326]">
+              Seasonal Harvest Extractions
+            </h2>
+          </div>
+          <Link
+            to="/series"
+            className="text-xs font-semibold text-[#C26747] hover:underline flex items-center gap-1"
+          >
+            <span>Browse Full Dispensary</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <FeaturedHeroSlider />
       </motion.div>
 
       {/* 3. Featured Hero Specimen Card */}
