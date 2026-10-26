@@ -8,28 +8,38 @@ import {
   ShoppingBag,
   Heart,
   Search,
-  ArrowRight,
+  Globe,
+  Truck,
+  HelpCircle,
+  PackageCheck,
+  ChevronDown,
 } from 'lucide-react';
 import { useBotanicalCart } from '../../context/BotanicalCartContext';
 import { useBotanicalWishlist } from '../../context/BotanicalWishlistContext';
-import { STORE_CONFIG } from '../../config/storeConfig';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { useCurrency } from '../../context/CurrencyContext';
+import { STORE_CONFIG, REGIONS } from '../../config/storeConfig';
 
-export default function BotanicalHeader() {
-  const { totalItemCount, subtotal } = useBotanicalCart();
+export default function BotanicalHeader({
+  onOpenLiveSearch,
+  onOpenTracking,
+  onOpenContact,
+  onOpenStory,
+  onOpenShipping,
+}) {
+  const { totalItemCount, subtotal, openCartDrawer } = useBotanicalCart();
   const { wishlistCount } = useBotanicalWishlist();
+  const { regionId, setRegion, activeRegion, formatRaw } = useCurrency();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isHome = location.pathname === '/';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
+  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
 
-  // Close mobile menu and search on route change
+  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
-    setSearchOpen(false);
+    setCurrencyDropdownOpen(false);
   }, [location.pathname, location.search]);
 
   // Lock body scroll when mobile menu is open
@@ -44,44 +54,103 @@ export default function BotanicalHeader() {
     };
   }, [mobileMenuOpen]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchInput.trim()) {
-      navigate(`/series?search=${encodeURIComponent(searchInput.trim())}`);
-      setSearchOpen(false);
-      setMobileMenuOpen(false);
-      setSearchInput('');
-    }
-  };
-
   const navLinks = [
-    { label: 'Home', to: '/' },
     { label: 'All Series', to: '/series' },
     { label: 'Elixirs', to: '/series?category=elixirs' },
     { label: 'Forest Teas', to: '/series?category=teas' },
-    { label: 'Botanical Balms', to: '/series?category=balms' },
+    { label: 'Balms', to: '/series?category=balms' },
     { label: 'Pure Oils', to: '/series?category=oils' },
     { label: 'Candles', to: '/series?category=candles' },
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-[#F4F1EA]/95 backdrop-blur-md border-b border-[#EBE6DC] shadow-sm transition-all">
-        {/* Top micro-bar for desktop */}
+      <header className="sticky top-0 z-40 w-full bg-[#F4F1EA]/95 backdrop-blur-md border-b border-[#EBE6DC] shadow-xs transition-all">
+        {/* Top Micro-Bar for Desktop */}
         <div className="hidden lg:block bg-[#1A3326] text-[#FBF9F5] text-[11px] py-1.5 px-4 font-medium border-b border-[#254736]">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="w-1.5 h-1.5 rounded-full bg-[#7D9678]" />
               <span className="text-[#DCE4DA]">
-                Arctic Harvest 2026 • Wildcrafted in Swedish Lapland (68°N)
+                Stockholm (59°N) & Subarctic Lapland (68°N) • Fresh Wildcraft Harvest
               </span>
+              <span className="text-[#7D9678]">•</span>
+              <button
+                type="button"
+                onClick={onOpenStory}
+                className="text-[#DCE4DA] hover:text-white underline underline-offset-2 transition-colors cursor-pointer"
+              >
+                Foraging Map & Reserves
+              </button>
             </div>
+
             <div className="flex items-center gap-4 text-[#DCE4DA]">
-              <span>
-                Free Nordic Transit on orders over {formatCurrency(STORE_CONFIG.freeShippingThreshold)}
+              <span className="text-emerald-300">
+                Free Transit on orders over {formatRaw(activeRegion.freeShippingThreshold)}
               </span>
+
               <span>•</span>
-              <span className="text-white font-medium">Tromsø & Stockholm Dispensary</span>
+
+              <button
+                type="button"
+                onClick={onOpenTracking}
+                className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+              >
+                <PackageCheck className="w-3.5 h-3.5 text-[#7D9678]" />
+                <span>Track Dispatch</span>
+              </button>
+
+              <span>•</span>
+
+              <button
+                type="button"
+                onClick={onOpenContact}
+                className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-[#7D9678]" />
+                <span>Client Care</span>
+              </button>
+
+              <span>•</span>
+
+              {/* Currency & Region Selector Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                  <span>{activeRegion.flag}</span>
+                  <span className="font-semibold">{activeRegion.currency}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-300" />
+                </button>
+
+                {currencyDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1.5 w-44 rounded-2xl bg-[#1A3326] border border-[#2B4E3C] shadow-2xl py-1 z-50 overflow-hidden">
+                    {Object.values(REGIONS).map((reg) => (
+                      <button
+                        key={reg.id}
+                        type="button"
+                        onClick={() => {
+                          setRegion(reg.id);
+                          setCurrencyDropdownOpen(false);
+                        }}
+                        className={`w-full px-3.5 py-2 text-left text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          reg.id === regionId
+                            ? 'bg-[#C26747] text-white font-bold'
+                            : 'text-[#DCE4DA] hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{reg.flag}</span>
+                          <span>{reg.label}</span>
+                        </span>
+                        <span className="text-[10px] font-mono opacity-80">{reg.currencySymbol}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -113,9 +182,9 @@ export default function BotanicalHeader() {
               </button>
             )}
 
-            {/* Responsive Brand Logo */}
+            {/* Brand Logo */}
             <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1A3326] text-[#FBF9F5] flex items-center justify-center font-botanical font-bold text-base sm:text-lg shadow-sm group-hover:bg-[#C26747] transition-colors shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#1A3326] text-[#FBF9F5] flex items-center justify-center font-botanical font-bold text-base sm:text-lg shadow-xs group-hover:bg-[#C26747] transition-colors shrink-0">
                 B
               </div>
               <div className="flex flex-col justify-center">
@@ -123,7 +192,7 @@ export default function BotanicalHeader() {
                   {STORE_CONFIG.brandName}
                 </span>
                 <span className="hidden sm:block text-[8.5px] lg:text-[9px] uppercase tracking-[0.22em] text-[#7D9678] font-semibold leading-none mt-0.5 whitespace-nowrap">
-                  Nordic Botanical Luxury
+                  Nordic Dispensary & Apothecary
                 </span>
               </div>
             </Link>
@@ -144,7 +213,7 @@ export default function BotanicalHeader() {
                   className={`relative py-1 transition-colors ${
                     isActive
                       ? 'text-[#1A3326] font-semibold after:absolute after:bottom-0 after:inset-x-0 after:h-[1.5px] after:bg-[#1A3326]'
-                      : 'text-[#1A3326]/70 hover:text-[#C26747]'
+                      : 'text-[#1A3326]/75 hover:text-[#C26747]'
                   }`}
                 >
                   {link.label}
@@ -153,49 +222,37 @@ export default function BotanicalHeader() {
             })}
           </nav>
 
-          {/* Right Actions: Search, Wishlist, Bag */}
+          {/* Right Actions: Search, Wishlist, Bag, Region Switcher on Mobile */}
           <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
-            {/* Desktop Search Field Trigger */}
-            <div className="relative hidden sm:block">
-              {searchOpen ? (
-                <form onSubmit={handleSearchSubmit} className="flex items-center">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search botanical..."
-                    className="w-44 sm:w-56 px-3.5 py-1.5 text-xs bg-white border border-[#EBE6DC] rounded-full text-[#1A3326] focus:outline-none focus:border-[#C26747] shadow-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSearchOpen(false)}
-                    className="p-1.5 text-slate-400 hover:text-[#1A3326] cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </form>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(true)}
-                  aria-label="Open search"
-                  className="p-2 rounded-full hover:bg-[#EBE6DC]/60 text-[#1A3326] hover:text-[#C26747] transition-colors cursor-pointer"
-                  title="Search botanicals"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Mobile Search Icon (Toggles Mobile Search Bar) */}
+            {/* Live Search Trigger */}
             <button
               type="button"
-              onClick={() => setSearchOpen(!searchOpen)}
-              aria-label="Toggle search"
-              className="sm:hidden p-2 rounded-full hover:bg-[#EBE6DC]/60 text-[#1A3326] hover:text-[#C26747] transition-colors cursor-pointer"
+              onClick={onOpenLiveSearch}
+              aria-label="Search formulations"
+              className="flex items-center gap-2 px-3 py-1.5 sm:py-2 rounded-full hover:bg-[#EBE6DC]/70 text-[#1A3326] hover:text-[#C26747] transition-all cursor-pointer border border-transparent sm:border-[#EBE6DC]/80 bg-transparent sm:bg-white/60"
+              title="Search botanicals (Press Cmd+K or Ctrl+K)"
             >
-              {searchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+              <Search className="w-4 h-4 text-[#7D9678]" />
+              <span className="hidden md:inline-block text-xs text-slate-500 font-normal">
+                Search specimens...
+              </span>
+              <kbd className="hidden md:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#F4F1EA] text-slate-400 border border-[#EBE6DC]">
+                /
+              </kbd>
+            </button>
+
+            {/* Region / Currency Button on Mobile / Tablet */}
+            <button
+              type="button"
+              onClick={() => {
+                const next = regionId === 'US' ? 'PK' : 'US';
+                setRegion(next);
+              }}
+              className="lg:hidden p-2 rounded-full hover:bg-[#EBE6DC]/60 text-xs font-semibold flex items-center gap-1 text-[#1A3326]"
+              title={`Switch currency to ${regionId === 'US' ? 'PKR' : 'USD'}`}
+            >
+              <span>{activeRegion.flag}</span>
+              <span className="text-[11px] font-bold">{activeRegion.currency}</span>
             </button>
 
             {/* Wishlist Shortcut */}
@@ -203,26 +260,27 @@ export default function BotanicalHeader() {
               to="/wishlist"
               aria-label="Saved Botanicals"
               className="p-2 rounded-full hover:bg-[#EBE6DC]/60 text-[#1A3326] hover:text-[#C26747] transition-colors relative"
-              title="Saved Botanicals"
+              title="Saved Formulations"
             >
               <Heart className="w-4 h-4" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#C26747] text-white text-[9px] font-bold flex items-center justify-center px-0.5 shadow-sm">
+                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] rounded-full bg-[#C26747] text-white text-[9px] font-bold flex items-center justify-center px-0.5 shadow-xs">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* Bag Shortcut with Desktop Subtotal Preview */}
-            <Link
-              to="/bag"
+            {/* Bag Shortcut Trigger (Opens Cart Drawer) */}
+            <button
+              type="button"
+              onClick={openCartDrawer}
               aria-label="View Botanical Bag"
-              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-[#FBF9F5] hover:bg-[#EFF4EE] border border-[#EBE6DC] text-[#1A3326] transition-all cursor-pointer group shrink-0"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full bg-[#FBF9F5] hover:bg-[#EFF4EE] border border-[#EBE6DC] text-[#1A3326] transition-all cursor-pointer group shrink-0 shadow-xs"
             >
               <div className="relative">
                 <ShoppingBag className="w-4 h-4 text-[#1A3326] group-hover:text-[#C26747] transition-colors" />
                 {totalItemCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full bg-[#C26747] text-white text-[9px] font-bold flex items-center justify-center px-0.5 shadow-sm">
+                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full bg-[#C26747] text-white text-[9px] font-bold flex items-center justify-center px-0.5 shadow-xs">
                     {totalItemCount}
                   </span>
                 )}
@@ -232,161 +290,163 @@ export default function BotanicalHeader() {
                   Bag
                 </span>
                 <span className="text-[#1A3326] font-bold leading-none">
-                  {formatCurrency(subtotal)}
+                  {formatRaw(subtotal)}
                 </span>
               </div>
-            </Link>
+            </button>
           </div>
         </div>
-
-        {/* Mobile Search Dropdown Bar (when search is toggled on mobile) */}
-        <AnimatePresence>
-          {searchOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="sm:hidden border-t border-[#EBE6DC] bg-[#FBF9F5] px-4 py-2.5 overflow-hidden"
-            >
-              <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7D9678]" />
-                  <input
-                    type="text"
-                    autoFocus
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Search birch, chaga, resin..."
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-[#EBE6DC] rounded-full text-[#1A3326] focus:outline-none focus:border-[#C26747]"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-3.5 py-2 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
-                >
-                  Search
-                </button>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
-      {/* Mobile Slide-Over Navigation Drawer */}
+      {/* Mobile Slide-Over Navigation Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden flex">
-            {/* Backdrop Blur Overlay */}
+          <div className="fixed inset-0 z-50 lg:hidden overflow-hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              aria-hidden="true"
             />
 
-            {/* Slide-out Drawer Panel */}
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ duration: 0.32, ease: [0.25, 1, 0.5, 1] }}
-              className="relative w-4/5 max-w-sm bg-[#FBF9F5] border-r border-[#EBE6DC] shadow-2xl z-10 flex flex-col justify-between overflow-y-auto"
-            >
-              <div>
-                {/* Drawer Header */}
-                <div className="p-5 border-b border-[#EBE6DC] flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#1A3326] text-[#FBF9F5] flex items-center justify-center font-botanical font-bold text-base shadow-sm">
+            <div className="fixed inset-y-0 left-0 max-w-full flex pr-10">
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="w-screen max-w-xs bg-[#FBF9F5] border-r border-[#EBE6DC] shadow-2xl flex flex-col justify-between"
+              >
+                <div className="p-5 border-b border-[#EBE6DC] flex items-center justify-between bg-white">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[#1A3326] text-white flex items-center justify-center font-botanical font-bold text-sm">
                       B
                     </div>
                     <div>
-                      <span className="font-botanical text-xl font-bold tracking-tight text-[#1A3326] block leading-none">
+                      <span className="font-botanical font-bold text-base text-[#1A3326] block leading-none">
                         {STORE_CONFIG.brandName}
                       </span>
-                      <span className="text-[8.5px] uppercase tracking-[0.2em] text-[#7D9678] block font-semibold mt-0.5">
-                        Nordic Botanical Luxury
+                      <span className="text-[9px] text-[#7D9678] uppercase tracking-wider block font-semibold mt-0.5">
+                        Stockholm • Tromsø
                       </span>
                     </div>
                   </div>
+
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
                     aria-label="Close menu"
-                    className="p-1.5 rounded-full hover:bg-[#EBE6DC] text-slate-500 hover:text-[#1A3326] transition-colors cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Drawer Quick Search */}
-                <div className="p-4 border-b border-[#EBE6DC]">
-                  <form onSubmit={handleSearchSubmit} className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7D9678]" />
-                    <input
-                      type="text"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Search botanicals & elixirs..."
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-[#EBE6DC] rounded-full text-[#1A3326] focus:outline-none focus:border-[#C26747]"
-                    />
-                  </form>
-                </div>
+                {/* Mobile Menu Links */}
+                <div className="p-5 overflow-y-auto space-y-6">
+                  {/* Region Switcher */}
+                  <div className="p-3 rounded-2xl bg-white border border-[#EBE6DC] space-y-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
+                      Regional Currency & Storefront
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.values(REGIONS).map((reg) => (
+                        <button
+                          key={reg.id}
+                          type="button"
+                          onClick={() => setRegion(reg.id)}
+                          className={`p-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
+                            regionId === reg.id
+                              ? 'bg-[#1A3326] text-white border-[#1A3326]'
+                              : 'bg-[#EFF4EE] text-slate-700 border-[#DCE4DA]'
+                          }`}
+                        >
+                          <span>{reg.flag}</span>
+                          <span>{reg.currency}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                {/* Drawer Navigation Links */}
-                <div className="p-4 space-y-1">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#7D9678] px-3 block mb-2">
-                    Dispensary Collections
-                  </span>
-                  {navLinks.map((link) => {
-                    const isActive =
-                      link.to === '/'
-                        ? location.pathname === '/' && !location.search
-                        : location.pathname + location.search === link.to;
-
-                    return (
+                  {/* Navigation Links */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-[#7D9678] tracking-widest block mb-2 px-1">
+                      Departments
+                    </span>
+                    {navLinks.map((link) => (
                       <Link
                         key={link.label}
                         to={link.to}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
-                          isActive
-                            ? 'bg-[#1A3326] text-white shadow-sm'
-                            : 'text-[#1A3326] hover:bg-[#EFF4EE] hover:text-[#C26747]'
-                        }`}
+                        className="block px-3 py-2.5 rounded-xl font-medium text-sm text-[#1A3326] hover:bg-[#EFF4EE] transition-colors"
                       >
-                        <span>{link.label}</span>
-                        <ArrowRight className="w-3.5 h-3.5 opacity-60" />
+                        {link.label}
                       </Link>
-                    );
-                  })}
-                </div>
-              </div>
+                    ))}
+                  </div>
 
-              {/* Drawer Footer Information */}
-              <div className="p-5 border-t border-[#EBE6DC] bg-[#EFF4EE]/60 space-y-3 text-xs">
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-medium">Arctic Harvest 2026</span>
-                  <span className="font-semibold text-[#7D9678]">Swedish Lapland</span>
+                  {/* Quick Utility Links */}
+                  <div className="pt-4 border-t border-[#EBE6DC] space-y-1 text-xs">
+                    <span className="text-[10px] uppercase font-bold text-[#7D9678] tracking-widest block mb-2 px-1">
+                      Dispensary Care
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenTracking();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-[#EFF4EE] font-medium flex items-center gap-2 cursor-pointer"
+                    >
+                      <PackageCheck className="w-4 h-4 text-[#7D9678]" />
+                      <span>Track Active Order</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenStory();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-[#EFF4EE] font-medium flex items-center gap-2 cursor-pointer"
+                    >
+                      <Globe className="w-4 h-4 text-[#7D9678]" />
+                      <span>Wildcraft Foraging Map</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenShipping();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-[#EFF4EE] font-medium flex items-center gap-2 cursor-pointer"
+                    >
+                      <Truck className="w-4 h-4 text-[#7D9678]" />
+                      <span>Shipping Guarantees</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenContact();
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-slate-700 hover:bg-[#EFF4EE] font-medium flex items-center gap-2 cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4 text-[#7D9678]" />
+                      <span>Apothecary Inquiries</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="font-medium">Free Nordic Transit</span>
-                  <span className="font-semibold text-[#1A3326]">Over $75</span>
+
+                <div className="p-4 bg-[#EFF4EE] border-t border-[#DCE4DA] text-center text-[10px] text-slate-500">
+                  BJÖRK & TALL • Arctic Botanicals AB
                 </div>
-                <div className="pt-2">
-                  <Link
-                    to="/series"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2.5 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <span>Explore Dispensary</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>

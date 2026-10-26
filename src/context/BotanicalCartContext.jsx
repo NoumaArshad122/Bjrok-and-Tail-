@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { STORE_CONFIG } from '../config/storeConfig';
+import { STORE_CONFIG, PROMO_CODES } from '../config/storeConfig';
+import { useCurrency } from './CurrencyContext';
 
 const BotanicalCartContext = createContext(null);
-const CART_STORAGE_KEY = 'nordic_botanical_bag_v2';
+const CART_STORAGE_KEY = 'bjork_tall_cart_v3';
+const PROMO_STORAGE_KEY = 'bjork_tall_applied_promo';
 
 export function BotanicalCartProvider({ children, onTriggerToast }) {
+  const { activeRegion, convertAmount } = useCurrency();
+
   const [cartItems, setCartItems] = useState(() => {
     try {
-      // Clear legacy preloaded item from v1 if present
-      localStorage.removeItem('nordic_botanical_bag_v1');
       const saved = localStorage.getItem(CART_STORAGE_KEY);
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
@@ -16,28 +18,51 @@ export function BotanicalCartProvider({ children, onTriggerToast }) {
     }
   });
 
+  const [appliedPromo, setAppliedPromo] = useState(() => {
+    try {
+      const saved = localStorage.getItem(PROMO_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [badgeBump, setBadgeBump] = useState(false);
-  const [flyingParticle, setFlyingParticle] = useState(null);
 
   // Persist to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     } catch (e) {
-      console.warn('Could not save cart to localStorage', e);
+      console.warn('Could not save cart to storage', e);
     }
   }, [cartItems]);
+
+  useEffect(() => {
+    try {
+      if (appliedPromo) {
+        localStorage.setItem(PROMO_STORAGE_KEY, JSON.stringify(appliedPromo));
+      } else {
+        localStorage.removeItem(PROMO_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn('Could not save promo to storage', e);
+    }
+  }, [appliedPromo]);
 
   const triggerBadgeBump = () => {
     setBadgeBump(true);
     setTimeout(() => setBadgeBump(false), 450);
   };
 
+  const openCartDrawer = () => setIsCartDrawerOpen(true);
+  const closeCartDrawer = () => setIsCartDrawerOpen(false);
+
   /**
-   * Adds an item to the botanical bag.
-   * Supports flying token animation coordinates.
+   * Adds an item to the cart and opens the slide-over drawer smoothly.
    */
-  const addToBag = (product, quantity = 1, startCoords = null) => {
+  const addToBag = (product, quantity = 1, _ignoredCoords = null, shouldOpenDrawer = true) => {
     const maxStock = product.stock || 20;
 
     setCartItems((prevItems) => {
@@ -70,24 +95,14 @@ export function BotanicalCartProvider({ children, onTriggerToast }) {
       }
     });
 
-    // Trigger flying particle animation if coordinates supplied
-    if (startCoords) {
-      setFlyingParticle({
-        id: Date.now(),
-        startX: startCoords.x,
-        startY: startCoords.y,
-        image: (product.images && product.images[0]) || '',
-      });
-      setTimeout(() => {
-        setFlyingParticle(null);
-        triggerBadgeBump();
-      }, 600);
-    } else {
-      triggerBadgeBump();
+    triggerBadgeBump();
+
+    if (shouldOpenDrawer) {
+      setIsCartDrawerOpen(true);
     }
 
     if (onTriggerToast) {
-      onTriggerToast(`Added "${product.title}" to your botanical bag.`, 'success');
+      onTriggerToast(`Added "${product.title}" to your apothecary bag.`, 'success');
     }
   };
 
@@ -115,10 +130,11 @@ export function BotanicalCartProvider({ children, onTriggerToast }) {
 
   const clearBag = () => {
     setCartItems([]);
+    setAppliedPromo(null);
   };
 
-  // Calculations
-  const subtotal = useMemo(() => {
+  // Base USD calculations
+  const subtotalUSD = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [cartItems]);
 
@@ -126,32 +142,79 @@ export function BotanicalCartProvider({ children, onTriggerToast }) {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
 
-  // Free shipping ($75 threshold)
-  const isFreeShipping = subtotal >= STORE_CONFIG.freeShippingThreshold;
-  const amountNeededForFreeShipping = Math.max(0, STORE_CONFIG.freeShippingThreshold - subtotal);
-  const freeShippingProgress = Math.min(
-    100,
-    Math.round((subtotal / STORE_CONFIG.freeShippingThreshold) * 100)
-  );
-  const shippingFee = cartItems.length === 0 ? 0 : isFreeShipping ? 0 : STORE_CONFIG.standardShippingFee;
+  // Dynamic regional conversion
+  const isPK = activeRegion.id === 'PK';
+  const subtotal = isPK ? Math.round(subtotalUSD * activeRegion.exchangeRate) : subtotalUSD;
 
-  // Complimentary Gift ($100 threshold)
-  const isGiftUnlocked = subtotal >= STORE_CONFIG.complimentaryGiftThreshold;
-  const amountNeededForGift = Math.max(0, STORE_CONFIG.complimentaryGiftThreshold - subtotal);
-  const giftProgress = Math.min(
-    100,
-    Math.round((subtotal / STORE_CONFIG.complimentaryGiftThreshold) * 100)
-  );
+  // Free shipping threshold based on region
+  const freeShippingThreshold = activeRegion.freeShippingThreshold;
+  const isFreeShipping = subtotal >= freeShippingThreshold || appliedPromo?.code === 'FREESHIP';
+  const amountNeededForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
+  const freeShippingProgress = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
-  const total = subtotal + shippingFee;
+  // Gift threshold
+  const giftThreshold = activeRegion.giftThreshold;
+  const isGiftUnlocked = subtotal >= giftThreshold;
+  const amountNeededForGift = Math.max(0, giftThreshold - subtotal);
+  const giftProgress = Math.min(100, Math.round((subtotal / giftThreshold) * 100));
+
+  // Shipping fee
+  const shippingFee = cartItems.length === 0 ? 0 : isFreeShipping ? 0 : activeRegion.standardShippingFee;
+
+  // Promo code discounts
+  const discountAmount = useMemo(() => {
+    if (!appliedPromo || cartItems.length === 0) return 0;
+    if (appliedPromo.type === 'percentage') {
+      return Math.round((subtotal * appliedPromo.value) / 100);
+    }
+    if (appliedPromo.type === 'fixed') {
+      return isPK ? appliedPromo.valuePKR : appliedPromo.valueUSD;
+    }
+    return 0;
+  }, [appliedPromo, subtotal, cartItems.length, isPK]);
+
+  const total = Math.max(0, subtotal - discountAmount + shippingFee);
+
+  const applyPromoCode = (code) => {
+    const clean = code.trim().toUpperCase();
+    const promo = PROMO_CODES[clean];
+    if (!promo) {
+      return { success: false, message: 'Invalid promotional code.' };
+    }
+
+    if (promo.code === 'HARVEST25') {
+      const minReq = isPK ? promo.minSubtotalPKR : promo.minSubtotalUSD;
+      if (subtotal < minReq) {
+        return {
+          success: false,
+          message: `Code requires a minimum subtotal of ${isPK ? `₨ ${minReq.toLocaleString()}` : `$${minReq}`}.`,
+        };
+      }
+    }
+
+    setAppliedPromo(promo);
+    if (onTriggerToast) {
+      onTriggerToast(`Promotional code "${clean}" applied successfully.`, 'success');
+    }
+    return { success: true, message: `Promo applied: ${promo.description}` };
+  };
+
+  const removePromoCode = () => {
+    setAppliedPromo(null);
+    if (onTriggerToast) {
+      onTriggerToast('Promotional code removed.', 'info');
+    }
+  };
 
   return (
     <BotanicalCartContext.Provider
       value={{
         cartItems,
         totalItemCount,
+        subtotalUSD,
         subtotal,
         shippingFee,
+        discountAmount,
         total,
         isFreeShipping,
         freeShippingProgress,
@@ -161,7 +224,13 @@ export function BotanicalCartProvider({ children, onTriggerToast }) {
         amountNeededForGift,
         complimentaryGift: STORE_CONFIG.complimentaryGift,
         badgeBump,
-        flyingParticle,
+        appliedPromo,
+        applyPromoCode,
+        removePromoCode,
+        isCartDrawerOpen,
+        setIsCartDrawerOpen,
+        openCartDrawer,
+        closeCartDrawer,
         addToBag,
         updateQuantity,
         removeFromBag,

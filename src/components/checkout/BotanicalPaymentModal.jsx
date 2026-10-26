@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   ShieldCheck,
@@ -9,12 +9,8 @@ import {
   Smartphone,
   Wallet,
   CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  Info,
-  Check,
 } from 'lucide-react';
-import { formatCurrency } from '../../lib/formatCurrency';
+import { useCurrency } from '../../context/CurrencyContext';
 
 export default function BotanicalPaymentModal({
   isOpen,
@@ -22,15 +18,20 @@ export default function BotanicalPaymentModal({
   total,
   subtotal,
   shippingFee,
-  isFreeShipping,
+  discountAmount,
+  _isFreeShipping,
   cartItems,
   onOrderSuccess,
 }) {
-  const [selectedMethod, setSelectedMethod] = useState('cod'); // 'cod' | 'jazzcash' | 'easypaisa' | 'nayapay' | 'card'
+  const { activeRegion, formatRaw, regionId } = useCurrency();
+  const isPK = regionId === 'PK';
+
+  // Default payment channel based on region
+  const [selectedMethod, setSelectedMethod] = useState(isPK ? 'cod' : 'card');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStep, setSubmitStep] = useState('');
 
-  // Shipping & Contact State (Clean empty initial values)
+  // Shipping Form
   const [shippingForm, setShippingForm] = useState({
     fullName: '',
     email: '',
@@ -41,20 +42,12 @@ export default function BotanicalPaymentModal({
     deliveryNotes: '',
   });
 
-  // Payment Specific State (Clean empty initial values)
+  // Payment Form
   const [paymentForm, setPaymentForm] = useState({
-    // JazzCash
-    jazzMobile: '',
-    jazzCnic: '',
-
-    // EasyPaisa
-    easypaisaMobile: '',
-    easypaisaName: '',
-
-    // NayaPay / SadaPay
-    digitalProvider: 'nayapay', // 'nayapay' | 'sadapay'
-    digitalTagOrMobile: '',
-
+    // Digital Wallets
+    mobileNumber: '',
+    cnic: '',
+    digitalTag: '',
     // Card
     cardNumber: '',
     cardName: '',
@@ -66,26 +59,13 @@ export default function BotanicalPaymentModal({
 
   if (!isOpen) return null;
 
-  // Validation Helpers
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePakPhone = (phone) => /^(03\d{9}|\+923\d{9})$/.test(phone.replace(/[\s-]/g, ''));
-  const validateExpiry = (exp) => {
-    if (!/^\d{2}\/\d{2}$/.test(exp)) return false;
-    const [month, year] = exp.split('/').map(Number);
-    if (month < 1 || month > 12) return false;
-    const currentYear = new Date().getFullYear() % 100;
-    const currentMonth = new Date().getMonth() + 1;
-    if (year < currentYear) return false;
-    if (year === currentYear && month < currentMonth) return false;
-    return true;
-  };
 
   const handleValidation = () => {
     const errs = {};
 
-    // 1. Validate Shipping Details
     if (!shippingForm.fullName.trim() || shippingForm.fullName.trim().length < 3) {
-      errs.fullName = 'Please enter your full name (at least 3 characters)';
+      errs.fullName = 'Please enter your full name (minimum 3 characters)';
     }
 
     if (!shippingForm.email.trim() || !validateEmail(shippingForm.email)) {
@@ -93,59 +73,45 @@ export default function BotanicalPaymentModal({
     }
 
     const cleanPhone = shippingForm.phone.replace(/[\s-]/g, '');
-    if (!cleanPhone || cleanPhone.length < 10) {
+    if (!cleanPhone || cleanPhone.length < 7) {
       errs.phone = 'Please enter a valid contact phone number';
     }
 
-    if (!shippingForm.address.trim() || shippingForm.address.trim().length < 5) {
+    if (!shippingForm.address.trim() || shippingForm.address.trim().length < 6) {
       errs.address = 'Please enter a complete delivery address';
     }
 
     if (!shippingForm.city.trim()) {
-      errs.city = 'Please enter your city';
+      errs.city = 'Please enter your destination city';
     }
 
-    if (!shippingForm.postalCode.trim() || shippingForm.postalCode.trim().length < 3) {
-      errs.postalCode = 'Please enter postal code';
+    // Payment validation
+    if (selectedMethod === 'card') {
+      const cleanCard = paymentForm.cardNumber.replace(/\s/g, '');
+      if (cleanCard.length < 15 || cleanCard.length > 19) {
+        errs.cardNumber = 'Please enter a valid 16-digit card number';
+      }
+      if (!paymentForm.cardName.trim()) {
+        errs.cardName = 'Name on card is required';
+      }
+      if (!/^\d{2}\/\d{2}$/.test(paymentForm.cardExpiry)) {
+        errs.cardExpiry = 'Format: MM/YY';
+      }
+      if (!/^\d{3,4}$/.test(paymentForm.cardCvv)) {
+        errs.cardCvv = 'CVV must be 3 or 4 digits';
+      }
     }
 
-    // 2. Validate Payment Specific Fields
-    if (selectedMethod === 'jazzcash') {
-      const jPhone = paymentForm.jazzMobile.replace(/[\s-]/g, '');
-      if (!validatePakPhone(jPhone)) {
-        errs.jazzMobile = 'Enter a valid 11-digit JazzCash account number (e.g. 03001234567)';
+    if (['jazzcash', 'easypaisa'].includes(selectedMethod)) {
+      const cleanMob = paymentForm.mobileNumber.replace(/[\s-]/g, '');
+      if (cleanMob.length < 10) {
+        errs.mobileNumber = 'Enter a valid registered mobile account number';
       }
-      if (!/^\d{6}$/.test(paymentForm.jazzCnic.trim())) {
-        errs.jazzCnic = 'Enter the last 6 digits of your registered CNIC';
-      }
-    } else if (selectedMethod === 'easypaisa') {
-      const ePhone = paymentForm.easypaisaMobile.replace(/[\s-]/g, '');
-      if (!validatePakPhone(ePhone)) {
-        errs.easypaisaMobile = 'Enter a valid 11-digit EasyPaisa mobile number';
-      }
-      if (!paymentForm.easypaisaName.trim() || paymentForm.easypaisaName.trim().length < 3) {
-        errs.easypaisaName = 'Enter the verified account holder name';
-      }
-    } else if (selectedMethod === 'nayapay') {
-      const val = paymentForm.digitalTagOrMobile.trim();
-      const isTag = val.startsWith('@') && val.length >= 3;
-      const isMobile = validatePakPhone(val);
-      if (!isTag && !isMobile) {
-        errs.digitalTagOrMobile = 'Enter a valid Nayatag/Sadatag (e.g. @name) or 11-digit mobile';
-      }
-    } else if (selectedMethod === 'card') {
-      const rawCard = paymentForm.cardNumber.replace(/\s/g, '');
-      if (!/^\d{16}$/.test(rawCard)) {
-        errs.cardNumber = 'Enter a valid 16-digit debit/credit card number';
-      }
-      if (!paymentForm.cardName.trim() || paymentForm.cardName.trim().length < 3) {
-        errs.cardName = 'Enter cardholder name as printed on card';
-      }
-      if (!validateExpiry(paymentForm.cardExpiry)) {
-        errs.cardExpiry = 'Enter valid expiry (MM/YY)';
-      }
-      if (!/^\d{3,4}$/.test(paymentForm.cardCvv.trim())) {
-        errs.cardCvv = 'Enter 3 or 4 digit CVV';
+    }
+
+    if (selectedMethod === 'nayapay') {
+      if (!paymentForm.digitalTag.trim()) {
+        errs.digitalTag = 'Please enter your NayaPay/SadaPay Nayatag or mobile number';
       }
     }
 
@@ -153,911 +119,435 @@ export default function BotanicalPaymentModal({
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmitOrder = async (e) => {
     e.preventDefault();
-
-    if (!handleValidation()) {
-      return;
-    }
+    if (!handleValidation()) return;
 
     setIsSubmitting(true);
-    setSubmitStep('Securing payment protocol...');
+    setSubmitStep('Verifying cold-chain inventory reservation...');
+    await new Promise((r) => setTimeout(r, 600));
 
-    // Gateway multi-step authorization protocol
-    setTimeout(() => {
-      if (selectedMethod === 'cod') {
-        setSubmitStep('Generating COD consignment booking...');
-      } else if (selectedMethod === 'jazzcash') {
-        setSubmitStep('Connecting to JazzCash Gateway & dispatching MPIN prompt...');
-      } else if (selectedMethod === 'easypaisa') {
-        setSubmitStep('Verifying EasyPaisa Account balance & authorization...');
-      } else if (selectedMethod === 'nayapay') {
-        setSubmitStep(`Sending instant push authorization to ${paymentForm.digitalProvider === 'nayapay' ? 'NayaPay' : 'SadaPay'} app...`);
-      } else {
-        setSubmitStep('Authorizing 256-bit encrypted card charge...');
-      }
-    }, 700);
+    setSubmitStep('Securing biophotonic packaging batch...');
+    await new Promise((r) => setTimeout(r, 650));
 
-    setTimeout(() => {
-      setSubmitStep('Order successfully confirmed!');
-      setIsSubmitting(false);
+    setSubmitStep('Authorizing dispatch token...');
+    await new Promise((r) => setTimeout(r, 600));
 
-      const generatedId = 'BOT-PK-' + Math.floor(100000 + Math.random() * 900000);
+    const prefix = isPK ? 'BT-PK' : 'BT-GL';
+    const orderRef = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      // Construct payment metadata
-      let paymentSummary = '';
-      if (selectedMethod === 'cod') {
-        paymentSummary = 'Cash on Delivery (Pay upon doorstep arrival)';
-      } else if (selectedMethod === 'jazzcash') {
-        paymentSummary = `JazzCash Account (${paymentForm.jazzMobile.slice(0, 4)}***${paymentForm.jazzMobile.slice(-3)})`;
-      } else if (selectedMethod === 'easypaisa') {
-        paymentSummary = `EasyPaisa Account (${paymentForm.easypaisaMobile.slice(0, 4)}***${paymentForm.easypaisaMobile.slice(-3)})`;
-      } else if (selectedMethod === 'nayapay') {
-        paymentSummary = `${paymentForm.digitalProvider === 'nayapay' ? 'NayaPay' : 'SadaPay'} (${paymentForm.digitalTagOrMobile})`;
-      } else {
-        paymentSummary = `Credit/Debit Card (Ending in ***${paymentForm.cardNumber.replace(/\s/g, '').slice(-4)})`;
-      }
+    const methodLabels = {
+      cod: isPK ? 'Cash on Delivery (TCS Express)' : 'Cash on Delivery (Global Handover)',
+      card: 'Debit / Credit Card (Visa/Mastercard 256-Bit)',
+      apple_pay: 'Apple Pay Express Biometric',
+      google_pay: 'Google Pay 1-Click',
+      paypal: 'PayPal Verified Transfer',
+      jazzcash: `JazzCash Mobile Account (${paymentForm.mobileNumber || 'Registered'})`,
+      easypaisa: `EasyPaisa Direct Account (${paymentForm.mobileNumber || 'Registered'})`,
+      nayapay: `NayaPay/SadaPay Tag (${paymentForm.digitalTag || 'Linked'})`,
+      raast: 'Raast Instant State Bank Settlement',
+    };
 
-      onOrderSuccess({
-        orderId: generatedId,
-        method: selectedMethod,
-        paymentSummary,
-        shipping: shippingForm,
-        total,
-        subtotal,
-        shippingFee,
-        items: cartItems,
-      });
-    }, 1700);
-  };
+    const completedOrderData = {
+      orderId: orderRef,
+      date: new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      status: 'Order Confirmed • Formulating in Södermalm Lab',
+      courier: activeRegion.defaultCourier,
+      trackingNumber: `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`,
+      estimatedDelivery: isPK ? '2–3 business days' : '3–5 business days (DHL Express)',
+      method: selectedMethod,
+      paymentSummary: methodLabels[selectedMethod] || 'Authorized & Dispatched',
+      subtotal,
+      discountAmount: discountAmount || 0,
+      shippingFee,
+      total,
+      currency: activeRegion.currency,
+      currencySymbol: activeRegion.currencySymbol,
+      shipping: { ...shippingForm },
+      items: cartItems.map((item) => ({
+        id: item.id,
+        title: item.title,
+        size: item.size,
+        price: isPK ? Math.round(item.price * activeRegion.exchangeRate) : item.price,
+        quantity: item.quantity,
+        image: item.image,
+      })),
+    };
 
-  // Card input formatters
-  const handleCardNumberChange = (val) => {
-    const raw = val.replace(/\D/g, '').slice(0, 16);
-    const parts = raw.match(/[\s\S]{1,4}/g) || [];
-    setPaymentForm((prev) => ({ ...prev, cardNumber: parts.join(' ') }));
-    if (errors.cardNumber) setErrors((prev) => ({ ...prev, cardNumber: null }));
-  };
-
-  const handleExpiryChange = (val) => {
-    let clean = val.replace(/\D/g, '').slice(0, 4);
-    if (clean.length >= 3) {
-      clean = clean.slice(0, 2) + '/' + clean.slice(2);
+    // Save to persistent storage
+    try {
+      const stored = JSON.parse(localStorage.getItem('bjork_tall_orders') || '[]');
+      stored.unshift(completedOrderData);
+      localStorage.setItem('bjork_tall_orders', JSON.stringify(stored));
+    } catch (err) {
+      console.warn('Could not persist order to storage', err);
     }
-    setPaymentForm((prev) => ({ ...prev, cardExpiry: clean }));
-    if (errors.cardExpiry) setErrors((prev) => ({ ...prev, cardExpiry: null }));
+
+    setIsSubmitting(false);
+    onOrderSuccess(completedOrderData);
   };
+
+  // Payment Options based on Region
+  const availableMethods = isPK
+    ? [
+        { id: 'cod', name: 'Cash on Delivery', sub: 'Pay in cash upon courier handover', icon: Truck },
+        { id: 'card', name: 'Debit / Credit Card', sub: 'Visa, Mastercard & UnionPay', icon: CreditCard },
+        { id: 'jazzcash', name: 'JazzCash Wallet', sub: 'Instant mobile account payment', icon: Smartphone },
+        { id: 'easypaisa', name: 'EasyPaisa Wallet', sub: 'Direct mobile wallet transfer', icon: Wallet },
+        { id: 'nayapay', name: 'NayaPay / SadaPay', sub: 'Instant payment via tag or mobile', icon: Smartphone },
+      ]
+    : [
+        { id: 'card', name: 'Credit / Debit Card', sub: 'Visa, Mastercard, Amex (Stripe 256-bit)', icon: CreditCard },
+        { id: 'apple_pay', name: 'Apple Pay / Google Pay', sub: '1-click biometric authorization', icon: Smartphone },
+        { id: 'paypal', name: 'PayPal Express', sub: 'Safe, buyer-protected transfer', icon: Wallet },
+        { id: 'cod', name: 'Cash on Delivery', sub: 'Available for selected international routes', icon: Truck },
+      ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-sm overflow-y-auto">
-      <motion.div
-        initial={{ scale: 0.96, opacity: 0, y: 10 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.96, opacity: 0, y: 10 }}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
-        className="w-full max-w-2xl bg-[#FBF9F5] rounded-[2rem] border border-[#EBE6DC] shadow-2xl overflow-hidden my-6"
-      >
-        {/* Modal Header */}
-        <div className="p-5 sm:p-6 border-b border-[#EBE6DC] flex items-center justify-between bg-white/60">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#7D9678] animate-ping" />
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#7D9678]">
-                Verified Dispensary Gateway
-              </span>
-            </div>
-            <h2 className="font-botanical text-xl sm:text-2xl font-bold text-[#1A3326] mt-0.5">
-              Secure Checkout & Payment
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close checkout modal"
-            className="p-2 rounded-full hover:bg-[#EBE6DC] text-slate-500 hover:text-[#1A3326] transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-        <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-6 text-xs max-h-[78vh] overflow-y-auto">
-          {/* Section 1: Delivery Information */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <h3 className="font-botanical text-base font-bold text-[#1A3326] flex items-center gap-1.5">
-                <span>1. Shipping Destination & Contact</span>
-              </h3>
-              <span className="text-[10px] text-slate-500 font-medium">All fields required</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Full Name */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 15 }}
+          className="relative w-full max-w-3xl bg-[#FBF9F5] rounded-[2rem] border border-[#EBE6DC] shadow-2xl overflow-hidden z-10 flex flex-col max-h-[92vh]"
+        >
+          {/* Header */}
+          <div className="p-5 sm:p-6 bg-[#1A3326] text-[#FBF9F5] flex items-center justify-between border-b border-[#2B4E3C]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#C26747] text-white flex items-center justify-center font-botanical font-bold text-lg">
+                B
+              </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Recipient Full Name *
-                </label>
-                <input
-                  type="text"
-                  value={shippingForm.fullName}
-                  onChange={(e) => {
-                    setShippingForm({ ...shippingForm, fullName: e.target.value });
-                    if (errors.fullName) setErrors({ ...errors, fullName: null });
-                  }}
-                  placeholder="e.g. Astrid Lind"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                    errors.fullName
-                      ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                      : 'border-[#EBE6DC] focus:border-[#C26747]'
-                  }`}
-                />
-                {errors.fullName && (
-                  <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>{errors.fullName}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Email Address (Receipt & Tracking) *
-                </label>
-                <input
-                  type="email"
-                  value={shippingForm.email}
-                  onChange={(e) => {
-                    setShippingForm({ ...shippingForm, email: e.target.value });
-                    if (errors.email) setErrors({ ...errors, email: null });
-                  }}
-                  placeholder="name@example.com"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                    errors.email
-                      ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                      : 'border-[#EBE6DC] focus:border-[#C26747]'
-                  }`}
-                />
-                {errors.email && (
-                  <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>{errors.email}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Mobile Number (Delivery & OTP) *
-                </label>
-                <input
-                  type="tel"
-                  value={shippingForm.phone}
-                  onChange={(e) => {
-                    setShippingForm({ ...shippingForm, phone: e.target.value });
-                    if (errors.phone) setErrors({ ...errors, phone: null });
-                  }}
-                  placeholder="03001234567"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                    errors.phone
-                      ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                      : 'border-[#EBE6DC] focus:border-[#C26747]'
-                  }`}
-                />
-                {errors.phone && (
-                  <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>{errors.phone}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* City */}
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">City / Region *</label>
-                <input
-                  type="text"
-                  value={shippingForm.city}
-                  onChange={(e) => {
-                    setShippingForm({ ...shippingForm, city: e.target.value });
-                    if (errors.city) setErrors({ ...errors, city: null });
-                  }}
-                  placeholder="e.g. Lahore / Karachi / Islamabad"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                    errors.city
-                      ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                      : 'border-[#EBE6DC] focus:border-[#C26747]'
-                  }`}
-                />
-                {errors.city && (
-                  <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>{errors.city}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Street Address & House / Flat No. *
-              </label>
-              <input
-                type="text"
-                value={shippingForm.address}
-                onChange={(e) => {
-                  setShippingForm({ ...shippingForm, address: e.target.value });
-                  if (errors.address) setErrors({ ...errors, address: null });
-                }}
-                placeholder="House 14, Street 7, Block B, Society"
-                className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                  errors.address
-                    ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                    : 'border-[#EBE6DC] focus:border-[#C26747]'
-                }`}
-              />
-              {errors.address && (
-                <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" />
-                  <span>{errors.address}</span>
-                </p>
-              )}
-            </div>
-
-            {/* Postal Code & Notes Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Postal Code *</label>
-                <input
-                  type="text"
-                  value={shippingForm.postalCode}
-                  onChange={(e) => {
-                    setShippingForm({ ...shippingForm, postalCode: e.target.value });
-                    if (errors.postalCode) setErrors({ ...errors, postalCode: null });
-                  }}
-                  placeholder="54000"
-                  className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] transition-all focus:outline-none ${
-                    errors.postalCode
-                      ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                      : 'border-[#EBE6DC] focus:border-[#C26747]'
-                  }`}
-                />
-                {errors.postalCode && (
-                  <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>{errors.postalCode}</span>
-                  </p>
-                )}
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Courier Special Instructions (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={shippingForm.deliveryNotes}
-                  onChange={(e) =>
-                    setShippingForm({ ...shippingForm, deliveryNotes: e.target.value })
-                  }
-                  placeholder="e.g. Call before arrival, leave with security"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#EBE6DC] bg-white text-[#1A3326] focus:outline-none focus:border-[#C26747]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Payment Method Selection */}
-          <div className="space-y-3.5 pt-3 border-t border-[#EBE6DC]">
-            <div className="flex items-center justify-between">
-              <h3 className="font-botanical text-base font-bold text-[#1A3326]">
-                2. Select Verified Payment Channel
-              </h3>
-              <span className="text-[10px] text-[#7D9678] font-semibold flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>256-bit Secure Gateway</span>
-              </span>
-            </div>
-
-            {/* Payment Method Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5">
-              {/* Option 1: Cash on Delivery (COD) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMethod('cod');
-                  setErrors({});
-                }}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedMethod === 'cod'
-                    ? 'border-[#C26747] bg-[#C26747]/10 ring-2 ring-[#C26747]/20 shadow-sm'
-                    : 'border-[#EBE6DC] bg-white hover:border-[#7D9678]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#EFF4EE] text-[#1A3326] flex items-center justify-center">
-                    <Truck className="w-4 h-4" />
-                  </div>
-                  {selectedMethod === 'cod' && (
-                    <span className="w-4 h-4 rounded-full bg-[#C26747] text-white flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1A3326] block leading-snug">
-                    Cash on Delivery
-                  </span>
-                  <span className="text-[10px] text-slate-500">Pay at Door</span>
-                </div>
-              </button>
-
-              {/* Option 2: JazzCash */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMethod('jazzcash');
-                  setErrors({});
-                }}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedMethod === 'jazzcash'
-                    ? 'border-[#D32F2F] bg-red-50/60 ring-2 ring-red-400/20 shadow-sm'
-                    : 'border-[#EBE6DC] bg-white hover:border-[#D32F2F]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-red-100 text-[#D32F2F] flex items-center justify-center font-black text-xs">
-                    JC
-                  </div>
-                  {selectedMethod === 'jazzcash' && (
-                    <span className="w-4 h-4 rounded-full bg-[#D32F2F] text-white flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1A3326] block leading-snug">
-                    JazzCash
-                  </span>
-                  <span className="text-[10px] text-slate-500">Mobile Wallet</span>
-                </div>
-              </button>
-
-              {/* Option 3: EasyPaisa */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMethod('easypaisa');
-                  setErrors({});
-                }}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedMethod === 'easypaisa'
-                    ? 'border-[#00A859] bg-emerald-50/60 ring-2 ring-emerald-400/20 shadow-sm'
-                    : 'border-[#EBE6DC] bg-white hover:border-[#00A859]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-[#00A859] flex items-center justify-center font-black text-xs">
-                    EP
-                  </div>
-                  {selectedMethod === 'easypaisa' && (
-                    <span className="w-4 h-4 rounded-full bg-[#00A859] text-white flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1A3326] block leading-snug">
-                    EasyPaisa
-                  </span>
-                  <span className="text-[10px] text-slate-500">Telenor Wallet</span>
-                </div>
-              </button>
-
-              {/* Option 4: NayaPay / SadaPay */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMethod('nayapay');
-                  setErrors({});
-                }}
-                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedMethod === 'nayapay'
-                    ? 'border-[#00838F] bg-cyan-50/60 ring-2 ring-cyan-400/20 shadow-sm'
-                    : 'border-[#EBE6DC] bg-white hover:border-[#00838F]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-cyan-100 text-[#00838F] flex items-center justify-center font-black text-xs">
-                    NP
-                  </div>
-                  {selectedMethod === 'nayapay' && (
-                    <span className="w-4 h-4 rounded-full bg-[#00838F] text-white flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1A3326] block leading-snug">
-                    NayaPay / Sada
-                  </span>
-                  <span className="text-[10px] text-slate-500">Digital Acc</span>
-                </div>
-              </button>
-
-              {/* Option 5: Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMethod('card');
-                  setErrors({});
-                }}
-                className={`col-span-2 sm:col-span-1 p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  selectedMethod === 'card'
-                    ? 'border-[#1A3326] bg-[#1A3326]/5 ring-2 ring-[#1A3326]/20 shadow-sm'
-                    : 'border-[#EBE6DC] bg-white hover:border-[#1A3326]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-[#EFF4EE] text-[#1A3326] flex items-center justify-center">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                  {selectedMethod === 'card' && (
-                    <span className="w-4 h-4 rounded-full bg-[#1A3326] text-white flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1A3326] block leading-snug">
-                    Credit / Debit
-                  </span>
-                  <span className="text-[10px] text-slate-500">Visa • Master</span>
-                </div>
-              </button>
-            </div>
-
-            {/* Dynamic Payment Specific Fields Panel */}
-            <div className="p-4 sm:p-5 rounded-2xl border border-[#EBE6DC] bg-white shadow-sm space-y-3">
-              {/* 1. COD Panel */}
-              {selectedMethod === 'cod' && (
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50/80 border border-amber-200/60 text-amber-900">
-                    <Truck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-xs text-amber-900">
-                        Cash on Delivery Policy
-                      </p>
-                      <p className="text-[11px] text-amber-800 leading-relaxed mt-0.5">
-                        Please keep the exact amount (<strong>{formatCurrency(total)}</strong>) ready in cash. Our verified courier will provide an official dispensary receipt upon handover.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>No advance payment needed. Free carbon-neutral transit insured.</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. JazzCash Panel */}
-              {selectedMethod === 'jazzcash' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="font-semibold text-[#D32F2F] flex items-center gap-1.5">
-                      <Smartphone className="w-3.5 h-3.5" />
-                      JazzCash Mobile Account Checkout
-                    </span>
-                    <span className="text-[10px] bg-red-100 text-[#D32F2F] px-2 py-0.5 rounded-full font-bold">
-                      Direct MPIN
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Registered JazzCash Mobile *
-                      </label>
-                      <input
-                        type="tel"
-                        value={paymentForm.jazzMobile}
-                        onChange={(e) => {
-                          setPaymentForm({ ...paymentForm, jazzMobile: e.target.value });
-                          if (errors.jazzMobile) setErrors({ ...errors, jazzMobile: null });
-                        }}
-                        placeholder="03001234567"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] focus:outline-none ${
-                          errors.jazzMobile
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#D32F2F]'
-                        }`}
-                      />
-                      {errors.jazzMobile && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.jazzMobile}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        CNIC Last 6 Digits (Security Check) *
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={paymentForm.jazzCnic}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                          setPaymentForm({ ...paymentForm, jazzCnic: val });
-                          if (errors.jazzCnic) setErrors({ ...errors, jazzCnic: null });
-                        }}
-                        placeholder="e.g. 543210"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] focus:outline-none ${
-                          errors.jazzCnic
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#D32F2F]'
-                        }`}
-                      />
-                      {errors.jazzCnic && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.jazzCnic}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-red-50/70 border border-red-200/60 text-[11px] text-red-900 flex items-start gap-2">
-                    <Info className="w-4 h-4 text-[#D32F2F] shrink-0 mt-0.5" />
-                    <span>
-                      After clicking confirm, an authorization prompt will appear on your phone screen. Please enter your 4-digit JazzCash MPIN to approve <strong>{formatCurrency(total)}</strong>.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. EasyPaisa Panel */}
-              {selectedMethod === 'easypaisa' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="font-semibold text-[#00A859] flex items-center gap-1.5">
-                      <Wallet className="w-3.5 h-3.5" />
-                      EasyPaisa Mobile Account Checkout
-                    </span>
-                    <span className="text-[10px] bg-emerald-100 text-[#00A859] px-2 py-0.5 rounded-full font-bold">
-                      App & USSD
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        EasyPaisa Account Number *
-                      </label>
-                      <input
-                        type="tel"
-                        value={paymentForm.easypaisaMobile}
-                        onChange={(e) => {
-                          setPaymentForm({ ...paymentForm, easypaisaMobile: e.target.value });
-                          if (errors.easypaisaMobile)
-                            setErrors({ ...errors, easypaisaMobile: null });
-                        }}
-                        placeholder="03451234567"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] focus:outline-none ${
-                          errors.easypaisaMobile
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#00A859]'
-                        }`}
-                      />
-                      {errors.easypaisaMobile && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.easypaisaMobile}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Account Holder Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={paymentForm.easypaisaName}
-                        onChange={(e) => {
-                          setPaymentForm({ ...paymentForm, easypaisaName: e.target.value });
-                          if (errors.easypaisaName)
-                            setErrors({ ...errors, easypaisaName: null });
-                        }}
-                        placeholder="Full Name as in EasyPaisa"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] focus:outline-none ${
-                          errors.easypaisaName
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#00A859]'
-                        }`}
-                      />
-                      {errors.easypaisaName && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.easypaisaName}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/60 text-[11px] text-emerald-900 flex items-start gap-2">
-                    <Info className="w-4 h-4 text-[#00A859] shrink-0 mt-0.5" />
-                    <span>
-                      Please unlock your EasyPaisa app or approve the incoming USSD popup request for <strong>{formatCurrency(total)}</strong>.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 4. NayaPay / SadaPay Panel */}
-              {selectedMethod === 'nayapay' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="font-semibold text-[#00838F] flex items-center gap-1.5">
-                      <Smartphone className="w-3.5 h-3.5" />
-                      Digital Wallet Authorization
-                    </span>
-                    {/* Toggle Provider */}
-                    <div className="flex items-center gap-1 p-0.5 rounded-full bg-[#EFF4EE] border border-[#EBE6DC]">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPaymentForm((prev) => ({
-                            ...prev,
-                            digitalProvider: 'nayapay',
-                          }))
-                        }
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                          paymentForm.digitalProvider === 'nayapay'
-                            ? 'bg-[#00838F] text-white shadow-sm'
-                            : 'text-slate-600 hover:text-[#00838F]'
-                        }`}
-                      >
-                        NayaPay
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPaymentForm((prev) => ({
-                            ...prev,
-                            digitalProvider: 'sadapay',
-                          }))
-                        }
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                          paymentForm.digitalProvider === 'sadapay'
-                            ? 'bg-[#FF5A5F] text-white shadow-sm'
-                            : 'text-slate-600 hover:text-[#FF5A5F]'
-                        }`}
-                      >
-                        SadaPay
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      {paymentForm.digitalProvider === 'nayapay' ? 'Nayatag' : 'Sadatag'} or Registered Mobile *
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentForm.digitalTagOrMobile}
-                      onChange={(e) => {
-                        setPaymentForm({ ...paymentForm, digitalTagOrMobile: e.target.value });
-                        if (errors.digitalTagOrMobile)
-                          setErrors({ ...errors, digitalTagOrMobile: null });
-                      }}
-                      placeholder={paymentForm.digitalProvider === 'nayapay' ? '@username or 03001234567' : '@sadatag or 03001234567'}
-                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] focus:outline-none ${
-                        errors.digitalTagOrMobile
-                          ? 'border-rose-400 ring-1 ring-rose-200'
-                          : 'border-[#EBE6DC] focus:border-[#00838F]'
-                      }`}
-                    />
-                    {errors.digitalTagOrMobile && (
-                      <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        <span>{errors.digitalTagOrMobile}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-cyan-50/70 border border-cyan-200/60 text-[11px] text-cyan-950 flex items-start gap-2">
-                    <Info className="w-4 h-4 text-[#00838F] shrink-0 mt-0.5" />
-                    <span>
-                      An instant in-app payment request will be sent to your {paymentForm.digitalProvider === 'nayapay' ? 'NayaPay' : 'SadaPay'} account. Simply tap "Approve" inside your app.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 5. Card Panel */}
-              {selectedMethod === 'card' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="font-semibold text-[#1A3326] flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-[#C26747]" />
-                      256-Bit Encrypted Card Terminal
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      Visa • Mastercard • PayPak
-                    </span>
-                  </div>
-
-                  {/* Card Number */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      16-Digit Card Number *
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={19}
-                      value={paymentForm.cardNumber}
-                      onChange={(e) => handleCardNumberChange(e.target.value)}
-                      placeholder="4242 4242 4242 4242"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] font-mono focus:outline-none ${
-                        errors.cardNumber
-                          ? 'border-rose-400 ring-1 ring-rose-200'
-                          : 'border-[#EBE6DC] focus:border-[#C26747]'
-                      }`}
-                    />
-                    {errors.cardNumber && (
-                      <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        <span>{errors.cardNumber}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Cardholder Name */}
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Cardholder Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={paymentForm.cardName}
-                      onChange={(e) => {
-                        setPaymentForm({ ...paymentForm, cardName: e.target.value.toUpperCase() });
-                        if (errors.cardName) setErrors({ ...errors, cardName: null });
-                      }}
-                      placeholder="ASTRID LIND"
-                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] tracking-wide focus:outline-none ${
-                        errors.cardName
-                          ? 'border-rose-400 ring-1 ring-rose-200'
-                          : 'border-[#EBE6DC] focus:border-[#C26747]'
-                      }`}
-                    />
-                    {errors.cardName && (
-                      <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3 shrink-0" />
-                        <span>{errors.cardName}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Expiry & CVV */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Expiration (MM/YY) *
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={5}
-                        value={paymentForm.cardExpiry}
-                        onChange={(e) => handleExpiryChange(e.target.value)}
-                        placeholder="MM/YY"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] font-mono focus:outline-none ${
-                          errors.cardExpiry
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#C26747]'
-                        }`}
-                      />
-                      {errors.cardExpiry && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.cardExpiry}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">
-                        Security Code (CVV) *
-                      </label>
-                      <input
-                        type="password"
-                        maxLength={4}
-                        value={paymentForm.cardCvv}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                          setPaymentForm({ ...paymentForm, cardCvv: val });
-                          if (errors.cardCvv) setErrors({ ...errors, cardCvv: null });
-                        }}
-                        placeholder="•••"
-                        className={`w-full px-3.5 py-2.5 rounded-xl border bg-white text-[#1A3326] font-mono focus:outline-none ${
-                          errors.cardCvv
-                            ? 'border-rose-400 ring-1 ring-rose-200'
-                            : 'border-[#EBE6DC] focus:border-[#C26747]'
-                        }`}
-                      />
-                      {errors.cardCvv && (
-                        <p className="mt-1 text-[11px] text-rose-500 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span>{errors.cardCvv}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Section 3: Order Cost Breakdown Preview */}
-          <div className="p-4 rounded-2xl bg-[#EFF4EE] border border-[#DCE4DA] space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Botanical Formulations Subtotal</span>
-              <span className="font-semibold text-[#1A3326]">{formatCurrency(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-slate-600">
-              <span>Carbon-Neutral Transit</span>
-              <span>
-                {isFreeShipping ? (
-                  <strong className="text-[#7D9678] font-bold">Complimentary (Over $75)</strong>
-                ) : (
-                  formatCurrency(shippingFee)
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between text-base font-bold text-[#1A3326] pt-2 border-t border-[#DCE4DA]">
-              <span>Grand Total Due</span>
-              <span className="text-[#C26747]">{formatCurrency(total)}</span>
-            </div>
-          </div>
-
-          {/* Verification / Security Badge */}
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
-            <div className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-[#7D9678]" />
-              <span>TLS 1.3 End-to-End Encrypted</span>
-            </div>
-            <span>Lapland Dispensary Standard</span>
-          </div>
-
-          {/* Submit Action Button with Status Emitter */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 rounded-full bg-[#C26747] hover:bg-[#1A3326] text-white font-semibold text-xs sm:text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
-          >
-            {isSubmitting ? (
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>{submitStep || 'Processing Payment...'}</span>
-              </div>
-            ) : (
-              <>
-                <ShieldCheck className="w-4 h-4" />
-                <span>
-                  {selectedMethod === 'cod'
-                    ? `Confirm Cash on Delivery Order • ${formatCurrency(total)}`
-                    : `Pay & Place Order • ${formatCurrency(total)}`}
+                <h3 className="font-botanical text-xl font-bold text-white leading-none">
+                  Secure Dispensary Checkout
+                </h3>
+                <span className="text-[11px] text-[#7D9678] tracking-widest uppercase font-semibold block mt-1">
+                  {activeRegion.label} • 256-Bit Encrypted Transfer
                 </span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
-      </motion.div>
-    </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="p-2 rounded-full hover:bg-white/10 text-[#DCE4DA] hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Checkout Body */}
+          <form onSubmit={handleSubmitOrder} className="overflow-y-auto p-6 sm:p-8 space-y-6 text-xs">
+            {/* Step 1: Destination Address */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-1 border-b border-[#EBE6DC]">
+                <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+                  1. Delivery Destination & Contact
+                </h4>
+                <span className="text-[10px] text-slate-400 uppercase font-bold">
+                  Cold-Chain Parcel Dispatch
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="text-[11px] font-bold text-[#1A3326] uppercase tracking-wider block mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingForm.fullName}
+                    onChange={(e) => setShippingForm({ ...shippingForm, fullName: e.target.value })}
+                    placeholder="e.g. Linnea Berg"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE6DC] text-[#1A3326] focus:outline-none focus:border-[#C26747]"
+                  />
+                  {errors.fullName && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.fullName}</span>}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-[#1A3326] uppercase tracking-wider block mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={shippingForm.email}
+                    onChange={(e) => setShippingForm({ ...shippingForm, email: e.target.value })}
+                    placeholder="name@example.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE6DC] text-[#1A3326] focus:outline-none focus:border-[#C26747]"
+                  />
+                  {errors.email && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.email}</span>}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-[#1A3326] uppercase tracking-wider block mb-1">
+                    Contact Mobile Number
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingForm.phone}
+                    onChange={(e) => setShippingForm({ ...shippingForm, phone: e.target.value })}
+                    placeholder={activeRegion.phonePlaceholder}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE6DC] text-[#1A3326] focus:outline-none focus:border-[#C26747]"
+                  />
+                  {errors.phone && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.phone}</span>}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-[#1A3326] uppercase tracking-wider block mb-1">
+                    City & Region
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingForm.city}
+                    onChange={(e) => setShippingForm({ ...shippingForm, city: e.target.value })}
+                    placeholder={isPK ? 'e.g. Karachi / Lahore / Islamabad' : 'e.g. Stockholm / New York / London'}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE6DC] text-[#1A3326] focus:outline-none focus:border-[#C26747]"
+                  />
+                  {errors.city && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.city}</span>}
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="text-[11px] font-bold text-[#1A3326] uppercase tracking-wider block mb-1">
+                    Street Address & Apartment
+                  </label>
+                  <input
+                    type="text"
+                    value={shippingForm.address}
+                    onChange={(e) => setShippingForm({ ...shippingForm, address: e.target.value })}
+                    placeholder="House / Flat / Street address"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE6DC] text-[#1A3326] focus:outline-none focus:border-[#C26747]"
+                  />
+                  {errors.address && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.address}</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Payment Method */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between pb-1 border-b border-[#EBE6DC]">
+                <h4 className="font-botanical text-base font-bold text-[#1A3326]">
+                  2. Payment & Settlement Channel
+                </h4>
+                <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  SSL Certified
+                </span>
+              </div>
+
+              {/* Method Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {availableMethods.map((meth) => {
+                  const Icon = meth.icon;
+                  const isSelected = selectedMethod === meth.id;
+
+                  return (
+                    <button
+                      key={meth.id}
+                      type="button"
+                      onClick={() => setSelectedMethod(meth.id)}
+                      className={`p-3 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#1A3326] text-white border-[#1A3326] shadow-sm'
+                          : 'bg-white text-slate-700 border-[#EBE6DC] hover:border-slate-400'
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-white/15 text-white' : 'bg-[#EFF4EE] text-[#1A3326]'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-xs block leading-tight">{meth.name}</span>
+                        <span
+                          className={`text-[10px] block mt-0.5 truncate ${
+                            isSelected ? 'text-[#DCE4DA]' : 'text-slate-400'
+                          }`}
+                        >
+                          {meth.sub}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Payment Specific Input Fields */}
+              <div className="p-4 rounded-2xl bg-white border border-[#EBE6DC] mt-3">
+                {selectedMethod === 'card' && (
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-bold text-[#1A3326] block">
+                      Cardholder Credentials (Stripe 256-Bit SSL)
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="sm:col-span-2">
+                        <input
+                          type="text"
+                          maxLength={19}
+                          value={paymentForm.cardNumber}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, cardNumber: e.target.value })}
+                          placeholder="Card Number (4000 1234 5678 9010)"
+                          className="w-full px-3.5 py-2 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs font-mono"
+                        />
+                        {errors.cardNumber && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.cardNumber}</span>}
+                      </div>
+
+                      <div>
+                        <input
+                          type="text"
+                          value={paymentForm.cardName}
+                          onChange={(e) => setPaymentForm({ ...paymentForm, cardName: e.target.value })}
+                          placeholder="Name on Card"
+                          className="w-full px-3.5 py-2 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs"
+                        />
+                        {errors.cardName && <span className="text-[10px] text-rose-600 block mt-0.5">{errors.cardName}</span>}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <input
+                            type="text"
+                            maxLength={5}
+                            value={paymentForm.cardExpiry}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, cardExpiry: e.target.value })}
+                            placeholder="MM/YY"
+                            className="w-full px-3 py-2 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs font-mono text-center"
+                          />
+                          {errors.cardExpiry && <span className="text-[9px] text-rose-600 block mt-0.5">{errors.cardExpiry}</span>}
+                        </div>
+                        <div>
+                          <input
+                            type="password"
+                            maxLength={4}
+                            value={paymentForm.cardCvv}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, cardCvv: e.target.value })}
+                            placeholder="CVV"
+                            className="w-full px-3 py-2 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs font-mono text-center"
+                          />
+                          {errors.cardCvv && <span className="text-[9px] text-rose-600 block mt-0.5">{errors.cardCvv}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {['jazzcash', 'easypaisa'].includes(selectedMethod) && (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-[#1A3326] block">
+                      {selectedMethod === 'jazzcash' ? 'JazzCash Mobile Account' : 'EasyPaisa Wallet'} Details
+                    </span>
+                    <input
+                      type="text"
+                      value={paymentForm.mobileNumber}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, mobileNumber: e.target.value })}
+                      placeholder="Enter registered mobile number (e.g. 0300 1234567)"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs"
+                    />
+                    {errors.mobileNumber && <span className="text-[10px] text-rose-600 block">{errors.mobileNumber}</span>}
+                    <p className="text-[10px] text-slate-500">
+                      You will receive an in-app authorization prompt or USSD flash notification on your phone to confirm payment.
+                    </p>
+                  </div>
+                )}
+
+                {selectedMethod === 'nayapay' && (
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-[#1A3326] block">
+                      NayaPay / SadaPay Tag
+                    </span>
+                    <input
+                      type="text"
+                      value={paymentForm.digitalTag}
+                      onChange={(e) => setPaymentForm({ ...paymentForm, digitalTag: e.target.value })}
+                      placeholder="e.g. @username or registered mobile number"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#FBF9F5] border border-[#EBE6DC] text-xs"
+                    />
+                    {errors.digitalTag && <span className="text-[10px] text-rose-600 block">{errors.digitalTag}</span>}
+                  </div>
+                )}
+
+                {selectedMethod === 'cod' && (
+                  <div className="flex items-start gap-2.5 text-xs text-slate-600">
+                    <Truck className="w-4 h-4 text-[#C26747] shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-[#1A3326] block font-semibold">Cash on Delivery Handover:</strong>
+                      <span>
+                        Please inspect the temperature-sealed biophotonic parcel before handing exact cash to the courier representative.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {['apple_pay', 'paypal'].includes(selectedMethod) && (
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Instant 1-Click Biometric Settlement linked to your default address and wallet.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="p-4 rounded-2xl bg-[#EFF4EE] border border-[#DCE4DA] space-y-2">
+              <div className="flex justify-between text-slate-600">
+                <span>Subtotal ({cartItems.length} items)</span>
+                <span>{formatRaw(subtotal)}</span>
+              </div>
+
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-emerald-700 font-medium">
+                  <span>Promotional Savings</span>
+                  <span>-{formatRaw(discountAmount)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-slate-600">
+                <span>{activeRegion.defaultCourier}</span>
+                <span>
+                  {shippingFee === 0 ? <strong className="text-emerald-700">Complimentary</strong> : formatRaw(shippingFee)}
+                </span>
+              </div>
+
+              <div className="pt-2 border-t border-[#DCE4DA] flex justify-between text-sm font-bold text-[#1A3326]">
+                <span>Total Amount Due</span>
+                <span className="text-[#C26747] text-base font-bold">{formatRaw(total)}</span>
+              </div>
+            </div>
+
+            {/* Submit CTA */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-4 rounded-full bg-[#1A3326] hover:bg-[#C26747] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <span className="animate-pulse">{submitStep || 'Processing Authorization...'}</span>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Confirm & Authorize Order • {formatRaw(total)}</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 text-center">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#7D9678]" />
+                <span>30-Day Freshness Guarantee • Clean Carbon-Neutral Dispatch</span>
+              </div>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 }

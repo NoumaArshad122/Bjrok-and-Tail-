@@ -1,15 +1,37 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, Mail, MapPin, Shield, Truck, PackageCheck, HelpCircle } from 'lucide-react';
 import { STORE_CONFIG } from '../../config/storeConfig';
 
-export default function BotanicalFooter() {
+export default function BotanicalFooter({
+  onOpenStory,
+  onOpenShipping,
+  onOpenContact,
+  onOpenTracking,
+}) {
   const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
+  const [subscribed, setSubscribed] = useState(() => {
+    try {
+      return !!localStorage.getItem('bjork_tall_newsletter_subscribed');
+    } catch {
+      return false;
+    }
+  });
 
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (email.trim()) {
+      try {
+        localStorage.setItem('bjork_tall_newsletter_subscribed', email.trim());
+        const key = 'bjork_tall_subscribers_list';
+        const list = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!list.includes(email.trim())) {
+          list.push(email.trim());
+          localStorage.setItem(key, JSON.stringify(list));
+        }
+      } catch (err) {
+        console.warn('Could not save subscription', err);
+      }
       setSubscribed(true);
       setEmail('');
     }
@@ -23,7 +45,7 @@ export default function BotanicalFooter() {
           {/* Brand Col */}
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#C26747] text-white flex items-center justify-center font-botanical font-bold text-xl shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-[#C26747] text-white flex items-center justify-center font-botanical font-bold text-xl shadow-xs">
                 B
               </div>
               <div>
@@ -37,17 +59,17 @@ export default function BotanicalFooter() {
             </div>
 
             <p className="text-xs text-[#DCE4DA] max-w-sm leading-relaxed">
-              Hand-harvested botanical elixirs, soothing resin salves, and forest teas. Crafted in harmony with the wild subarctic taiga and northern winter stillness.
+              Hand-harvested botanical elixirs, soothing resin salves, and forest teas. Formulated in harmony with the wild subarctic taiga and cold-chain dispatched worldwide.
             </p>
 
             <div className="pt-2">
               <span className="text-[10px] uppercase font-bold tracking-widest text-[#7D9678] block mb-2">
-                Join the Solstice Circle
+                Join the Dispensary Circle
               </span>
               {subscribed ? (
                 <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#EFF4EE]/10 border border-[#7D9678]/30 text-xs text-emerald-300">
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span>Welcome to the Solstice Circle. Check your inbox for your harvest gift.</span>
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Welcome to the circle. Privileged harvest access has been reserved for your address.</span>
                 </div>
               ) : (
                 <form onSubmit={handleSubscribe} className="flex gap-2 max-w-sm">
@@ -56,14 +78,14 @@ export default function BotanicalFooter() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email for private drops..."
+                    placeholder="Enter email for private seasonal drops..."
                     className="flex-1 px-4 py-2.5 rounded-full bg-white/10 border border-white/15 text-xs text-white placeholder-[#DCE4DA]/50 focus:outline-none focus:border-[#C26747]"
                   />
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-full bg-[#C26747] hover:bg-[#1A3326] text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
+                    className="px-5 py-2.5 rounded-full bg-[#C26747] hover:bg-[#A95335] text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
                   >
-                    Join
+                    Subscribe
                   </button>
                 </form>
               )}
@@ -99,7 +121,7 @@ export default function BotanicalFooter() {
                 </li>
                 <li>
                   <Link to="/series?category=candles" className="hover:text-white transition-colors">
-                    Rapeseed Wax Candles
+                    Smoked Cedar Candles
                   </Link>
                 </li>
               </ul>
@@ -107,28 +129,44 @@ export default function BotanicalFooter() {
 
             <div>
               <h4 className="font-botanical text-base font-bold text-white mb-3">
-                Philosophy
+                Philosophy & Science
               </h4>
               <ul className="space-y-2 text-[#DCE4DA]">
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => onOpenStory && onOpenStory('map')}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
                     Wildcraft Foraging Map
-                  </span>
+                  </button>
                 </li>
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
-                    Miron Glass Science
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenStory && onOpenStory('glass')}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Biophotonic Miron Glass
+                  </button>
                 </li>
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => onOpenStory && onOpenStory('treaty')}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
                     Zero-Depletion Treaties
-                  </span>
+                  </button>
                 </li>
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
-                    Carbon-Neutral Offset
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenShipping && onOpenShipping()}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Climate-Positive Dispatch
+                  </button>
                 </li>
               </ul>
             </div>
@@ -149,14 +187,31 @@ export default function BotanicalFooter() {
                   </Link>
                 </li>
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
-                    Complimentary Shipping
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onOpenTracking && onOpenTracking()}
+                    className="hover:text-white transition-colors cursor-pointer text-left font-medium text-emerald-300"
+                  >
+                    Track Active Dispatch →
+                  </button>
                 </li>
                 <li>
-                  <span className="hover:text-white transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={() => onOpenShipping && onOpenShipping()}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Shipping & Returns Policy
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onOpenContact && onOpenContact()}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
                     Apothecary Inquiries
-                  </span>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -165,13 +220,13 @@ export default function BotanicalFooter() {
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#254736] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#7D9678]">
-          <p>© {new Date().getFullYear()} {STORE_CONFIG.brandName} Apothecary AB. Handcrafted in Sweden.</p>
+          <p>© {new Date().getFullYear()} {STORE_CONFIG.brandName} Apothecary AB. Certified Botanical Formulary.</p>
           <div className="flex items-center gap-4 text-[11px] text-[#DCE4DA]">
             <span>100% Wildcrafted</span>
             <span>•</span>
             <span>Zero Synthetic Additives</span>
             <span>•</span>
-            <span>Nordic Climate Positive</span>
+            <span>Miron Violet Glass Purity</span>
           </div>
         </div>
       </div>

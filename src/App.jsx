@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { BotanicalCartProvider, useBotanicalCart } from './context/BotanicalCartContext';
+import { CurrencyProvider } from './context/CurrencyContext';
+import { BotanicalCartProvider } from './context/BotanicalCartContext';
 import { BotanicalWishlistProvider } from './context/BotanicalWishlistContext';
 
 import BotanicalHeader from './components/layout/BotanicalHeader';
 import BotanicalFooter from './components/layout/BotanicalFooter';
 import BottomNav from './components/layout/BottomNav';
 import BotanicalToast from './components/ui/BotanicalToast';
-import FlyingParticle from './components/ui/FlyingParticle';
+import CartDrawer from './components/cart/CartDrawer';
+import BotanicalPaymentModal from './components/checkout/BotanicalPaymentModal';
+
+import LiveSearchModal from './components/modals/LiveSearchModal';
+import BrandStoryModal from './components/modals/BrandStoryModal';
+import ShippingPolicyModal from './components/modals/ShippingPolicyModal';
+import ContactModal from './components/modals/ContactModal';
+import OrderTrackingModal from './components/modals/OrderTrackingModal';
 
 import BotanicalHomePage from './pages/BotanicalHomePage';
 import BotanicalSeriesPage from './pages/BotanicalSeriesPage';
@@ -25,55 +33,125 @@ function ScrollToTop() {
   return null;
 }
 
-// Inner App with access to Cart Context for Flying Particle
 function AppContent({ toast, setToast }) {
-  const { flyingParticle } = useBotanicalCart();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Modals state
+  const [isLiveSearchOpen, setIsLiveSearchOpen] = useState(false);
+  const [isStoryOpen, setIsStoryOpen] = useState(false);
+  const [storyTab, setStoryTab] = useState('map');
+  const [isShippingOpen, setIsShippingOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isTrackingOpen, setIsTrackingOpen] = useState(false);
+  const [trackingInitialId, setTrackingInitialId] = useState('');
+
+  // Global Keyboard Shortcuts (Cmd+K / Ctrl+K / /)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsLiveSearchOpen((prev) => !prev);
+      }
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        setIsLiveSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleOpenStory = (tab = 'map') => {
+    setStoryTab(tab);
+    setIsStoryOpen(true);
+  };
+
+  const handleOpenTracking = (orderId = '') => {
+    setTrackingInitialId(orderId);
+    setIsTrackingOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F1EA] text-[#222E25] font-sans selection:bg-[#C26747] selection:text-white flex flex-col justify-between relative overflow-x-clip">
-      {/* Subtle organic light drift across page header */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-64 bg-gradient-to-b from-[#7D9678]/15 via-[#C26747]/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      {/* Top Header */}
+      <BotanicalHeader
+        onOpenLiveSearch={() => setIsLiveSearchOpen(true)}
+        onOpenTracking={() => handleOpenTracking()}
+        onOpenContact={() => setIsContactOpen(true)}
+        onOpenStory={handleOpenStory}
+        onOpenShipping={() => setIsShippingOpen(true)}
+      />
 
-      {/* Top Botanical Header with Desktop Navigation */}
-      <BotanicalHeader />
-
-      {/* Main Screen Router with Soft Nordic Transitions */}
+      {/* Main Pages */}
       <main className="flex-1 w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.24, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <Routes location={location}>
-              <Route path="/" element={<BotanicalHomePage />} />
+              <Route path="/" element={<BotanicalHomePage onOpenStory={handleOpenStory} />} />
               <Route path="/series" element={<BotanicalSeriesPage />} />
               <Route path="/product/:slug" element={<BotanicalProductDetailPage />} />
-              <Route path="/bag" element={<BotanicalBagPage />} />
+              <Route path="/bag" element={<BotanicalBagPage onOpenTracking={handleOpenTracking} />} />
               <Route path="/wishlist" element={<BotanicalWishlistPage />} />
-              <Route path="*" element={<BotanicalHomePage />} />
+              <Route path="*" element={<BotanicalHomePage onOpenStory={handleOpenStory} />} />
             </Routes>
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* Global Botanical Footer on Desktop and Mobile */}
-      <BotanicalFooter />
+      {/* Global Footer */}
+      <BotanicalFooter
+        onOpenStory={handleOpenStory}
+        onOpenShipping={() => setIsShippingOpen(true)}
+        onOpenContact={() => setIsContactOpen(true)}
+        onOpenTracking={() => handleOpenTracking()}
+      />
 
-      {/* Flying Particle Token Animation */}
-      <FlyingParticle particle={flyingParticle} />
+      {/* Slide-over Mini-Cart Drawer */}
+      <CartDrawer onProceedToCheckout={() => navigate('/bag')} />
 
-      {/* Polite Live Region Botanical Toast */}
+      {/* Interactive Global Modals */}
+      <LiveSearchModal
+        isOpen={isLiveSearchOpen}
+        onClose={() => setIsLiveSearchOpen(false)}
+      />
+
+      <BrandStoryModal
+        isOpen={isStoryOpen}
+        onClose={() => setIsStoryOpen(false)}
+        initialTab={storyTab}
+      />
+
+      <ShippingPolicyModal
+        isOpen={isShippingOpen}
+        onClose={() => setIsShippingOpen(false)}
+      />
+
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+      />
+
+      <OrderTrackingModal
+        isOpen={isTrackingOpen}
+        onClose={() => setIsTrackingOpen(false)}
+        initialOrderId={trackingInitialId}
+      />
+
+      {/* Global Toast */}
       <BotanicalToast
         message={toast.message}
         type={toast.type}
         onClose={() => setToast({ message: '', type: 'success' })}
       />
 
-      {/* Floating Pill-Shaped Bottom Navigation on Mobile */}
+      {/* Floating Bottom Nav for Mobile */}
       <BottomNav />
     </div>
   );
@@ -89,11 +167,13 @@ export default function App() {
   return (
     <Router>
       <ScrollToTop />
-      <BotanicalWishlistProvider onTriggerToast={triggerToast}>
-        <BotanicalCartProvider onTriggerToast={triggerToast}>
-          <AppContent toast={toast} setToast={setToast} />
-        </BotanicalCartProvider>
-      </BotanicalWishlistProvider>
+      <CurrencyProvider>
+        <BotanicalWishlistProvider onTriggerToast={triggerToast}>
+          <BotanicalCartProvider onTriggerToast={triggerToast}>
+            <AppContent toast={toast} setToast={setToast} />
+          </BotanicalCartProvider>
+        </BotanicalWishlistProvider>
+      </CurrencyProvider>
     </Router>
   );
 }

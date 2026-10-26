@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 import { Plus, Check, Heart } from 'lucide-react';
 import { useBotanicalCart } from '../../context/BotanicalCartContext';
 import { useBotanicalWishlist } from '../../context/BotanicalWishlistContext';
-import { formatCurrency, calculateDiscount } from '../../lib/formatCurrency';
+import { useCurrency } from '../../context/CurrencyContext';
+import { calculateDiscount } from '../../lib/formatCurrency';
 
 export default function BotanicalProductCard({ product }) {
   const { addToBag } = useBotanicalCart();
   const { toggleWishlist, isInWishlist } = useBotanicalWishlist();
+  const { formatPrice } = useCurrency();
   const [justAdded, setJustAdded] = useState(false);
 
   const inWishlist = isInWishlist(product.id);
@@ -18,14 +20,8 @@ export default function BotanicalProductCard({ product }) {
     e.preventDefault();
     e.stopPropagation();
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const startCoords = {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-    };
-
     setJustAdded(true);
-    addToBag(product, 1, startCoords);
+    addToBag(product, 1);
     setTimeout(() => setJustAdded(false), 900);
   };
 
@@ -39,7 +35,7 @@ export default function BotanicalProductCard({ product }) {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ duration: 0.25, ease: [0.2, 0.8, 0.2, 1] }}
-      className="group relative bg-[#FBF9F5] rounded-2xl p-3 sm:p-4 border border-[#EBE6DC] hover:border-[#1A3326]/40 transition-all duration-300 flex flex-col justify-between overflow-hidden"
+      className="group relative bg-[#FBF9F5] rounded-2xl p-3 sm:p-4 border border-[#EBE6DC] hover:border-[#1A3326]/40 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-md"
     >
       <div>
         {/* Product Art Frame */}
@@ -58,7 +54,7 @@ export default function BotanicalProductCard({ product }) {
           {/* Understated Editorial Tags */}
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
             {product.tag ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-medium tracking-wider uppercase bg-[#1A3326]/85 backdrop-blur-sm text-[#FBF9F5]">
+              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-medium tracking-wider uppercase bg-[#1A3326]/90 backdrop-blur-sm text-[#FBF9F5]">
                 {product.tag}
               </span>
             ) : discount > 0 ? (
@@ -76,7 +72,7 @@ export default function BotanicalProductCard({ product }) {
             className={`absolute top-2.5 right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
               inWishlist
                 ? 'bg-[#C26747] text-white hover:bg-[#1A3326]'
-                : 'bg-white/80 text-[#1A3326] hover:bg-white hover:text-[#C26747]'
+                : 'bg-white/85 text-[#1A3326] hover:bg-white hover:text-[#C26747] shadow-xs'
             }`}
           >
             <Heart
@@ -89,9 +85,16 @@ export default function BotanicalProductCard({ product }) {
 
         {/* Botanical Details */}
         <div className="space-y-1">
-          <span className="text-[9.5px] uppercase font-semibold tracking-widest text-[#7D9678] block">
-            {product.categoryName} • {product.size}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[9.5px] uppercase font-semibold tracking-widest text-[#7D9678] block truncate">
+              {product.categoryName} • {product.size}
+            </span>
+            {product.stock && product.stock <= 10 && (
+              <span className="text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.2 rounded shrink-0">
+                {product.stock} left
+              </span>
+            )}
+          </div>
 
           <h3 className="font-botanical text-sm sm:text-base font-semibold text-[#1A3326] group-hover:text-[#C26747] transition-colors leading-snug line-clamp-1">
             <Link to={`/product/${product.slug}`}>{product.title}</Link>
@@ -107,16 +110,16 @@ export default function BotanicalProductCard({ product }) {
       <div className="mt-3 pt-2.5 border-t border-[#EBE6DC] flex items-center justify-between gap-1.5 min-w-0">
         <div className="flex flex-col xs:flex-row xs:items-baseline gap-0.5 xs:gap-1.5 min-w-0">
           <span className="text-xs sm:text-sm font-semibold text-[#1A3326] leading-tight whitespace-nowrap">
-            {formatCurrency(product.price)}
+            {formatPrice(product.price)}
           </span>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
             <span className="text-[10px] sm:text-[11px] text-slate-400 line-through leading-none whitespace-nowrap">
-              {formatCurrency(product.compareAtPrice)}
+              {formatPrice(product.compareAtPrice)}
             </span>
           )}
         </div>
 
-        {/* Quick Add Button with Clean Minimalist Styling */}
+        {/* Quick Add Button */}
         <motion.button
           type="button"
           whileTap={{ scale: 0.92 }}
@@ -124,14 +127,14 @@ export default function BotanicalProductCard({ product }) {
           aria-label={`Add ${product.title} to bag`}
           className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-full flex items-center justify-center gap-1 text-[11px] font-medium tracking-wide transition-all cursor-pointer shrink-0 ${
             justAdded
-              ? 'bg-[#1A3326] text-[#FBF9F5] hover:bg-[#C26747]'
-              : 'bg-[#C26747] hover:bg-[#1A3326] text-white shadow-sm'
+              ? 'bg-[#1A3326] text-[#FBF9F5]'
+              : 'bg-[#C26747] hover:bg-[#1A3326] text-white shadow-xs'
           }`}
         >
           {justAdded ? (
             <>
               <Check className="w-3 h-3 stroke-[2.2]" />
-              <span className="text-[10px] sm:text-[11px] whitespace-nowrap">In Bag</span>
+              <span className="text-[10px] sm:text-[11px] whitespace-nowrap">Added</span>
             </>
           ) : (
             <>

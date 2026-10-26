@@ -1,13 +1,18 @@
 /**
- * Formats a numeric price into a localized currency string.
+ * Utility currency formatter for fallback usages outside React context.
  * @param {number} amount
  * @param {string} currency
  * @returns {string}
  */
 export function formatCurrency(amount, currency = 'USD') {
   if (typeof amount !== 'number' || isNaN(amount)) {
-    return '$0.00';
+    return currency === 'PKR' ? '₨ 0' : '$0.00';
   }
+
+  if (currency === 'PKR') {
+    return `₨ ${Math.round(amount).toLocaleString('en-PK')}`;
+  }
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
