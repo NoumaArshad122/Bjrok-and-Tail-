@@ -9,7 +9,6 @@ import {
 import { BOTANICAL_CATEGORIES } from '../data/categories';
 import { BOTANICAL_PRODUCTS } from '../data/botanicalProducts';
 import BotanicalProductCard from '../components/product/BotanicalProductCard';
-import FeaturedHeroSlider from '../components/home/FeaturedHeroSlider';
 import { STORE_CONFIG } from '../config/storeConfig';
 import { useBotanicalCart } from '../context/BotanicalCartContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -207,33 +206,6 @@ export default function BotanicalHomePage({ onOpenStory }) {
             </Link>
           ))}
         </div>
-      </motion.div>
-
-      {/* 2B. Seasonal Harvest Extractions Showcase */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1, ease: [0.2, 0.8, 0.2, 1] }}
-        className="space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] uppercase tracking-widest font-bold text-[#7D9678] font-mono">
-              Live Formulary Showcase
-            </span>
-            <h2 className="font-botanical text-xl lg:text-2xl font-semibold text-[#1A3326]">
-              Seasonal Harvest Extractions
-            </h2>
-          </div>
-          <Link
-            to="/series"
-            className="text-xs font-semibold text-[#C26747] hover:underline flex items-center gap-1"
-          >
-            <span>Browse Full Dispensary</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-        <FeaturedHeroSlider />
       </motion.div>
 
       {/* 3. Featured Hero Specimen Card */}
